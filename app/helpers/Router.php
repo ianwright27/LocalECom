@@ -67,10 +67,21 @@ class Router {
      * Constructor - Initialize router with current request
      */
     public function __construct() {
+        // Auto-detect base path from script location
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $basePath = dirname($scriptName);
+        
+        // If in root directory, basePath will be '/', we want empty string
+        if ($basePath === '/' || $basePath === '\\') {
+            $basePath = '';
+        }
+
+        $this->basePath = $basePath;
         $this->requestUri = $this->getRequestUri();
         $this->requestMethod = $this->getRequestMethod();
     }
     
+
     /**
      * Set base path for application
      * Useful if app is not in document root
@@ -79,6 +90,7 @@ class Router {
      * 
      * @param string $basePath The base path
      */
+
     public function setBasePath($basePath) {
         $this->basePath = rtrim($basePath, '/');
     }
@@ -104,6 +116,11 @@ class Router {
         
         // Ensure URI starts with /
         $uri = '/' . ltrim($uri, '/');
+        
+        // If URI is just the base path, return root
+        if ($uri === '/' || $uri === '') {
+            $uri = '/';
+        }
         
         return $uri;
     }

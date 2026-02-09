@@ -1,0 +1,46 @@
+# WrightCommerce API - Apache Configuration
+# This file enables clean URLs and routes all requests through index.php
+
+# Enable Rewrite Engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Set the base directory (change this in production if needed)
+    RewriteBase /wrightcommerce/public/
+    
+    # If the requested file or directory exists, serve it directly
+    # This allows access to actual files like images, CSS, JS
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Otherwise, route everything through index.php
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    # CORS Headers (for React app)
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes
+
+# Prevent access to sensitive files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# PHP settings (optional)
+<IfModule mod_php.c>
+    php_flag display_errors On
+    php_value error_reporting E_ALL
+    # Change to Off in production:
+    # php_flag display_errors Off
+</IfModule>
