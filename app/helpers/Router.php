@@ -52,6 +52,12 @@ class Router {
     private $basePath = '';
     
     /**
+     * Current route prefix (for route groups)
+     * @var string
+     */
+    private $routePrefix = '';
+    
+    /**
      * Route parameters extracted from URL
      * @var array
      */
@@ -68,20 +74,29 @@ class Router {
      */
     public function __construct() {
         // Auto-detect base path from script location
+        // SCRIPT_NAME will be something like: /wrightcommerce/public/index.php
+        // We want base path to be: /wrightcommerce/public (the directory containing index.php)
+        // 
+        // However, if you're accessing via /wrightcommerce/public/, 
+        // REQUEST_URI will be /wrightcommerce/public/
+        // So base path should actually be /wrightcommerce/public
+        
         $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        
+        // Get the directory containing the script
+        // For /wrightcommerce/public/index.php -> /wrightcommerce/public
         $basePath = dirname($scriptName);
         
         // If in root directory, basePath will be '/', we want empty string
         if ($basePath === '/' || $basePath === '\\') {
             $basePath = '';
         }
-
+        
         $this->basePath = $basePath;
         $this->requestUri = $this->getRequestUri();
         $this->requestMethod = $this->getRequestMethod();
     }
     
-
     /**
      * Set base path for application
      * Useful if app is not in document root
@@ -90,7 +105,6 @@ class Router {
      * 
      * @param string $basePath The base path
      */
-
     public function setBasePath($basePath) {
         $this->basePath = rtrim($basePath, '/');
     }
@@ -244,12 +258,12 @@ class Router {
      * @param callable $callback Function that registers routes
      */
     public function group($prefix, $callback) {
-        $originalBasePath = $this->basePath;
-        $this->basePath = $originalBasePath . '/' . trim($prefix, '/');
+        $originalPrefix = $this->routePrefix;
+        $this->routePrefix = $originalPrefix . '/' . trim($prefix, '/');
         
         call_user_func($callback, $this);
         
-        $this->basePath = $originalBasePath;
+        $this->routePrefix = $originalPrefix;
     }
     
     /**
@@ -261,8 +275,8 @@ class Router {
      * @return Router Returns self for method chaining
      */
     private function addRoute($method, $path, $handler) {
-        // Normalize path
-        $path = $this->basePath . '/' . trim($path, '/');
+        // Normalize path - use routePrefix for groups, NOT basePath
+        $path = $this->routePrefix . '/' . trim($path, '/');
         $path = '/' . trim($path, '/');
         if ($path === '') {
             $path = '/';
