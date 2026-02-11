@@ -39,7 +39,7 @@ require_once '../app/helpers/Router.php';
 // Load controllers (add more as you create them)
 require_once '../app/controllers/BaseController.php';
 require_once '../app/controllers/ProductController.php';
-// require_once '../app/controllers/AuthController.php'; // Week 1
+require_once '../app/controllers/AuthController.php';
 // require_once '../app/controllers/OrderController.php'; // Week 3
 // require_once '../app/controllers/CustomerController.php'; // Week 3
 // require_once '../app/controllers/PaymentController.php'; // Week 4
@@ -98,18 +98,32 @@ $router->get('/test-db', function() {
     }
 });
 
+// Debug session (REMOVE IN PRODUCTION!)
+$router->get('/debug/session', function() {
+    session_start();
+    echo json_encode([
+        'session_exists' => session_status() === PHP_SESSION_ACTIVE,
+        'session_id' => session_id(),
+        'session_data' => $_SESSION ?? [],
+        'user_id' => $_SESSION['user_id'] ?? 'NOT SET',
+        'business_id' => $_SESSION['business_id'] ?? 'NOT SET',
+        'cookies' => $_COOKIE ?? []
+    ], JSON_PRETTY_PRINT);
+});
+
 // ============================================
 // AUTHENTICATION ROUTES
 // ============================================
-// TODO: Create AuthController in Week 1, Days 3-5
-// Uncomment these when AuthController is ready
 
-// $router->post('/auth/register', 'AuthController@register');
-// $router->post('/auth/login', 'AuthController@login');
-// $router->post('/auth/logout', 'AuthController@logout');
-// $router->post('/auth/forgot-password', 'AuthController@forgotPassword');
-// $router->post('/auth/reset-password', 'AuthController@resetPassword');
-// $router->get('/auth/me', 'AuthController@me');
+$router->post('/auth/register', 'AuthController@register');
+$router->post('/auth/login', 'AuthController@login');
+$router->post('/auth/logout', 'AuthController@logout');
+$router->get('/auth/me', 'AuthController@me');
+$router->put('/auth/profile', 'AuthController@updateProfile');
+$router->post('/auth/change-password', 'AuthController@changePassword');
+$router->post('/auth/forgot-password', 'AuthController@forgotPassword');
+$router->post('/auth/reset-password', 'AuthController@resetPassword');
+$router->get('/auth/check', 'AuthController@check');
 
 // ============================================
 // API V1 ROUTES GROUP

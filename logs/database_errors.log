@@ -1,0 +1,8 @@
+[2026-02-11 12:49:34] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
+[2026-02-11 12:49:56] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
+[2026-02-11 12:55:10] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
+[2026-02-11 12:58:30] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
+[2026-02-11 13:16:56] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
+[2026-02-11 13:17:02] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
+[2026-02-11 13:22:57] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
+[2026-02-11 13:25:28] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products

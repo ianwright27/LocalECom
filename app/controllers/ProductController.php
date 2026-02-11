@@ -153,6 +153,13 @@ class ProductController extends BaseController {
     public function store() {
         $this->requireAuth();
         
+        // Debug: Check if business_id is available
+        $businessId = $this->getBusinessId();
+        if (!$businessId) {
+            $this->log("Product creation attempted but business_id is null. User ID: " . $this->getUserId(), 'error');
+            return $this->error('Business ID not found. Please logout and login again.', 400);
+        }
+        
         // Validate input
         $this->validate([
             'name' => 'required|min:3|max:255',
@@ -192,6 +199,9 @@ class ProductController extends BaseController {
         }
         
         try {
+            // Debug: Log what we're trying to insert
+            $this->log("Attempting to create product with data: " . json_encode($data));
+            
             $productId = $this->db->insert('products', $data);
             
             // Log activity
@@ -204,6 +214,12 @@ class ProductController extends BaseController {
             
         } catch (Exception $e) {
             $this->log("Failed to create product: " . $e->getMessage(), 'error');
+            
+            // In development, show the actual error
+            if ($_SERVER['SERVER_NAME'] === 'localhost') {
+                return $this->error('Failed to create product: ' . $e->getMessage(), 500);
+            }
+            
             return $this->serverError('Failed to create product. Please try again.');
         }
     }

@@ -1,0 +1,15 @@
+[2026-02-11 12:44:43] [info] New user registered: john@example.com, Business: Kamau Electronics
+[2026-02-11 12:49:34] [error] Failed to create product: Database insert operation failed
+[2026-02-11 12:49:56] [error] Failed to create product: Database insert operation failed
+[2026-02-11 12:55:10] [error] Failed to create product: Database insert operation failed
+[2026-02-11 12:58:30] [error] Failed to create product: Database insert operation failed
+[2026-02-11 13:16:56] [info] Attempting to create product with data: {"business_id":1,"name":"iPhone 15 Pro","description":"Latest Apple smartphone","price":120000,"cost_price":100000,"stock":10,"sku":"IP15-PRO-128","category":"Electronics","status":"active"}
+[2026-02-11 13:16:56] [error] Failed to create product: Database insert operation failed
+[2026-02-11 13:17:02] [info] Attempting to create product with data: {"business_id":1,"name":"iPhone 15 Pro","description":"Latest Apple smartphone","price":120000,"cost_price":100000,"stock":10,"sku":"IP15-PRO-128","category":"Electronics","status":"active"}
+[2026-02-11 13:17:02] [error] Failed to create product: Database insert operation failed
+[2026-02-11 13:17:33] [info] User logged out: john@example.com
+[2026-02-11 13:20:14] [info] User logged in: john@example.com
+[2026-02-11 13:22:57] [info] Attempting to create product with data: {"business_id":1,"name":"iPhone 15 Pro","description":"","price":120000,"cost_price":0,"stock":10,"sku":null,"category":"","status":"active"}
+[2026-02-11 13:22:57] [error] Failed to create product: Database insert operation failed
+[2026-02-11 13:25:28] [info] Attempting to create product with data: {"business_id":1,"name":"iPhone 15 Pro","description":"Latest Apple smartphone","price":120000,"cost_price":100000,"stock":10,"sku":"IP15-PRO-128","category":"Electronics","status":"active"}
+[2026-02-11 13:25:28] [error] Failed to create product: Database insert operation failed
