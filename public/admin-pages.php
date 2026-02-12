@@ -87,7 +87,7 @@ if ($page === 'dashboard'): ?>
     <!-- ALL PRODUCTS -->
     <div class="content-box">
         <div class="text-right mb-20">
-            <a href="?page=add-product" class="btn btn-success">Add New Product</a>
+            <a href="?page=add-product" class="btn btn-success">➕ Add New Product</a>
         </div>
         
         <?php
@@ -126,6 +126,7 @@ if ($page === 'dashboard'): ?>
         <table>
             <thead>
                 <tr>
+                    <th>Image</th>
                     <th>Product</th>
                     <th>Category</th>
                     <th>Price</th>
@@ -138,6 +139,16 @@ if ($page === 'dashboard'): ?>
             <tbody>
                 <?php foreach ($products as $product): ?>
                 <tr>
+                    <td>
+                        <?php if (!empty($product['image'])): ?>
+                            <img src="uploads/<?= htmlspecialchars($product['image']) ?>" 
+                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                        <?php else: ?>
+                            <div style="width: 50px; height: 50px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 20px;">
+                                📦
+                            </div>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <strong><?= htmlspecialchars($product['name']) ?></strong><br>
                         <small style="color: #999;"><?= htmlspecialchars($product['sku'] ?? 'No SKU') ?></small>
@@ -174,7 +185,9 @@ if ($page === 'dashboard'): ?>
     <?php
     // Handle delete
     if ($action === 'delete' && $productId) {
-        $db->update('products', $productId, ['status' => 'deleted']);
+        // $db->update('products', $productId, ['status' => 'deleted']);
+        // for now we are just marking as deleted, but we can also permanently delete if needed
+        $db->delete('products', ['id' => $productId]);  // Delete by condition
         echo "<script>alert('Product deleted!'); window.location='?page=products';</script>";
     }
     ?>
@@ -278,6 +291,9 @@ if ($page === 'dashboard'): ?>
     
     // Handle form submission
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Debug: Log that form was submitted
+        error_log("Product form submitted. Files: " . print_r($_FILES, true));
+        
         $data = [
             'name' => $_POST['name'],
             'description' => $_POST['description'] ?? '',
@@ -288,6 +304,50 @@ if ($page === 'dashboard'): ?>
             'category' => $_POST['category'] ?? '',
             'status' => $_POST['status'] ?? 'active'
         ];
+        
+        // Handle image upload
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $maxSize = 5242880; // 5MB
+            
+            $file = $_FILES['image'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            
+            if (in_array($mimeType, $allowedTypes) && $file['size'] <= $maxSize) {
+                // Create uploads directory if it doesn't exist
+                // Use $_SERVER['DOCUMENT_ROOT'] for correct path
+                $publicDir = $_SERVER['DOCUMENT_ROOT'] . '/wrightcommerce/public';
+                $uploadDir = $publicDir . '/uploads/products';
+                
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                
+                // Generate unique filename
+                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $filename = uniqid() . '_' . time() . '.' . $extension;
+                $destination = $uploadDir . '/' . $filename;
+                
+                // Move uploaded file
+                if (move_uploaded_file($file['tmp_name'], $destination)) {
+                    // Delete old image if editing
+                    if ($isEdit && $product && !empty($product['image'])) {
+                        $oldImagePath = $publicDir . '/uploads/' . $product['image'];
+                        if (file_exists($oldImagePath)) {
+                            unlink($oldImagePath);
+                        }
+                    }
+                    
+                    $data['image'] = 'products/' . $filename;
+                } else {
+                    echo "<script>alert('Failed to upload image. Check folder permissions.');</script>";
+                }
+            } else {
+                echo "<script>alert('Invalid file type or file too large (max 5MB)');</script>";
+            }
+        }
         
         if ($isEdit && $product) {
             $db->update('products', $productId, $data);
@@ -303,53 +363,80 @@ if ($page === 'dashboard'): ?>
     <div class="content-box">
         <h2 class="mb-20"><?= $isEdit ? 'Edit Product' : 'Add New Product' ?></h2>
         
-        <form method="POST" style="max-width: 600px;">
-            <div class="form-group">
-                <label>Product Name *</label>
-                <input type="text" name="name" required value="<?= htmlspecialchars($product['name'] ?? '') ?>">
-            </div>
-            
-            <div class="form-group">
-                <label>Description</label>
-                <textarea name="description" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="form-group">
-                    <label>Selling Price (KES) *</label>
-                    <input type="number" name="price" step="0.01" required value="<?= $product['price'] ?? '' ?>">
+        <form method="POST" enctype="multipart/form-data" style="max-width: 800px;">
+            <div style="display: grid; grid-template-columns: 1fr 300px; gap: 30px;">
+                <!-- Left Column: Form Fields -->
+                <div>
+                    <div class="form-group">
+                        <label>Product Name *</label>
+                        <input type="text" name="name" required value="<?= htmlspecialchars($product['name'] ?? '') ?>">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Selling Price (KES) *</label>
+                            <input type="number" name="price" step="0.01" required value="<?= $product['price'] ?? '' ?>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Cost Price (KES)</label>
+                            <input type="number" name="cost_price" step="0.01" value="<?= $product['cost_price'] ?? '' ?>">
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Stock Quantity *</label>
+                            <input type="number" name="stock" required value="<?= $product['stock'] ?? 0 ?>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>SKU</label>
+                            <input type="text" name="sku" value="<?= htmlspecialchars($product['sku'] ?? '') ?>">
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <input type="text" name="category" value="<?= htmlspecialchars($product['category'] ?? '') ?>" placeholder="e.g., Electronics">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select name="status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="active" <?= ($product['status'] ?? 'active') === 'active' ? 'selected' : '' ?>>Active</option>
+                                <option value="inactive" <?= ($product['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Cost Price (KES)</label>
-                    <input type="number" name="cost_price" step="0.01" value="<?= $product['cost_price'] ?? '' ?>">
-                </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="form-group">
-                    <label>Stock Quantity *</label>
-                    <input type="number" name="stock" required value="<?= $product['stock'] ?? 0 ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label>SKU</label>
-                    <input type="text" name="sku" value="<?= htmlspecialchars($product['sku'] ?? '') ?>">
-                </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="form-group">
-                    <label>Category</label>
-                    <input type="text" name="category" value="<?= htmlspecialchars($product['category'] ?? '') ?>" placeholder="e.g., Electronics">
-                </div>
-                
-                <div class="form-group">
-                    <label>Status</label>
-                    <select name="status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                        <option value="active" <?= ($product['status'] ?? 'active') === 'active' ? 'selected' : '' ?>>Active</option>
-                        <option value="inactive" <?= ($product['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactive</option>
-                    </select>
+                <!-- Right Column: Image Upload -->
+                <div>
+                    <div class="form-group">
+                        <label>Product Image</label>
+                        <div style="border: 2px dashed #ddd; padding: 20px; text-align: center; border-radius: 8px; background: #f9f9f9;">
+                            <?php if ($isEdit && !empty($product['image'])): ?>
+                                <img id="imagePreview" src="uploads/<?= htmlspecialchars($product['image']) ?>" style="max-width: 100%; max-height: 200px; margin-bottom: 10px; border-radius: 4px;">
+                                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Current Image</p>
+                            <?php else: ?>
+                                <img id="imagePreview" src="" style="max-width: 100%; max-height: 200px; margin-bottom: 10px; border-radius: 4px; display: none;">
+                                <p id="noImageText" style="color: #999; margin-bottom: 10px;">📷 No image uploaded</p>
+                            <?php endif; ?>
+                            
+                            <input type="file" name="image" id="imageInput" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                            <button type="button" onclick="document.getElementById('imageInput').click()" class="btn btn-primary btn-sm">
+                                <?= $isEdit && !empty($product['image']) ? 'Change Image' : 'Upload Image' ?>
+                            </button>
+                            <p style="font-size: 11px; color: #999; margin-top: 10px;">Max 5MB • JPG, PNG, GIF, WebP</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -359,5 +446,24 @@ if ($page === 'dashboard'): ?>
             </div>
         </form>
     </div>
+    
+    <script>
+    function previewImage(input) {
+        const preview = document.getElementById('imagePreview');
+        const noImageText = document.getElementById('noImageText');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                if (noImageText) noImageText.style.display = 'none';
+            };
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    </script>
 
 <?php endif; ?>
