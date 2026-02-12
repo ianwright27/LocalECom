@@ -1,0 +1,2 @@
+[2026-02-12 14:23:41] [info] Attempting to create product with data: {"business_id":1,"name":"iPhone 15 Pro","description":"Latest Apple smartphone","price":120000,"cost_price":100000,"stock":10,"sku":"IP15-PRO-128","category":"Electronics","status":"active"}
+[2026-02-12 14:23:41] [info] Product created: ID 4, Name: iPhone 15 Pro, By User: 1
