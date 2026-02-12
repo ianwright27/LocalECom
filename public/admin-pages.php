@@ -87,7 +87,7 @@ if ($page === 'dashboard'): ?>
     <!-- ALL PRODUCTS -->
     <div class="content-box">
         <div class="text-right mb-20">
-            <a href="?page=add-product" class="btn btn-success">➕ Add New Product</a>
+            <a href="?page=add-product" class="btn btn-success">Add New Product</a>
         </div>
         
         <?php
