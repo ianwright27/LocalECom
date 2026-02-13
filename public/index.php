@@ -40,8 +40,8 @@ require_once '../app/helpers/Router.php';
 require_once '../app/controllers/BaseController.php';
 require_once '../app/controllers/ProductController.php';
 require_once '../app/controllers/AuthController.php';
-// require_once '../app/controllers/OrderController.php'; // Week 3
-// require_once '../app/controllers/CustomerController.php'; // Week 3
+require_once '../app/controllers/OrderController.php'; // Week 3
+require_once '../app/controllers/CustomerController.php'; // Week 3
 // require_once '../app/controllers/PaymentController.php'; // Week 4
 // require_once '../app/controllers/MpesaController.php'; // Week 4
 // require_once '../app/controllers/DashboardController.php'; // Week 6

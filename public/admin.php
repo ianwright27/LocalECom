@@ -19,7 +19,6 @@ $businessId = $_SESSION['business_id'] ?? null;
 
 // Get page parameter
 $page = $_GET['page'] ?? 'dashboard';
-$category = $_GET['category'] ?? null; 
 $action = $_GET['action'] ?? null;
 $productId = $_GET['id'] ?? null;
 
@@ -84,6 +83,7 @@ if ($action === 'logout') {
         .badge-success { background: #d4edda; color: #155724; }
         .badge-warning { background: #fff3cd; color: #856404; }
         .badge-danger { background: #f8d7da; color: #721c24; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
         
         /* Login Form */
         .login-box { max-width: 400px; margin: 100px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -149,7 +149,9 @@ if ($action === 'logout') {
     <div class="sidebar">
         <h2>📦 WrightCommerce</h2>
         <a href="?page=dashboard" class="<?= $page === 'dashboard' ? 'active' : '' ?>">📊 Dashboard</a>
+        <a href="?page=orders" class="<?= $page === 'orders' || $page === 'order-details' ? 'active' : '' ?>">🛒 Orders</a>
         <a href="?page=products" class="<?= $page === 'products' ? 'active' : '' ?>">📦 All Products</a>
+        <a href="?page=customers" class="<?= $page === 'customers' ? 'active' : '' ?>">👥 Customers</a>
         <a href="?page=low-stock" class="<?= $page === 'low-stock' ? 'active' : '' ?>">⚠️ Low Stock</a>
         <a href="?page=categories" class="<?= $page === 'categories' ? 'active' : '' ?>">🏷️ Categories</a>
         <a href="?page=add-product" class="<?= $page === 'add-product' ? 'active' : '' ?>">➕ Add Product</a>
@@ -163,7 +165,7 @@ if ($action === 'logout') {
     
     <div class="main">
         <div class="header">
-            <h1><?= ucfirst(str_replace('-', ' ', $page)).($category ? " - ".htmlspecialchars($category) : ""); ?></h1>
+            <h1><?= ucfirst(str_replace('-', ' ', $page)) ?></h1>
         </div>
         
         <?php

@@ -87,7 +87,7 @@ if ($page === 'dashboard'): ?>
     <!-- ALL PRODUCTS -->
     <div class="content-box">
         <div class="text-right mb-20">
-            <a href="?page=add-product" class="btn btn-success">Add New Product</a>
+            <a href="?page=add-product" class="btn btn-success">➕ Add New Product</a>
         </div>
         
         <?php
@@ -185,9 +185,7 @@ if ($page === 'dashboard'): ?>
     <?php
     // Handle delete
     if ($action === 'delete' && $productId) {
-        // $db->update('products', $productId, ['status' => 'deleted']);
-        // for now we are just marking as deleted, but we can also permanently delete if needed
-        $db->delete('products', ['id' => $productId]);  // Delete by condition
+        $db->update('products', $productId, ['status' => 'deleted']);
         echo "<script>alert('Product deleted!'); window.location='?page=products';</script>";
     }
     ?>
@@ -465,5 +463,244 @@ if ($page === 'dashboard'): ?>
         }
     }
     </script>
+
+<?php elseif ($page === 'orders'): ?>
+    <!-- ORDERS LIST -->
+    <div class="content-box">
+        <h2 class="mb-20">Orders</h2>
+        
+        <?php
+        $statusFilter = $_GET['status'] ?? '';
+        
+        $sql = "SELECT * FROM orders WHERE business_id = ?";
+        $params = [$businessId];
+        
+        if ($statusFilter) {
+            $sql .= " AND status = ?";
+            $params[] = $statusFilter;
+        }
+        
+        $sql .= " ORDER BY created_at DESC";
+        
+        $orders = $db->query($sql, $params);
+        ?>
+        
+        <!-- Status Filter -->
+        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+            <a href="?page=orders" class="btn <?= !$statusFilter ? 'btn-primary' : '' ?>">All</a>
+            <a href="?page=orders&status=pending" class="btn <?= $statusFilter === 'pending' ? 'btn-primary' : '' ?>">Pending</a>
+            <a href="?page=orders&status=processing" class="btn <?= $statusFilter === 'processing' ? 'btn-primary' : '' ?>">Processing</a>
+            <a href="?page=orders&status=completed" class="btn <?= $statusFilter === 'completed' ? 'btn-primary' : '' ?>">Completed</a>
+            <a href="?page=orders&status=cancelled" class="btn <?= $statusFilter === 'cancelled' ? 'btn-primary' : '' ?>">Cancelled</a>
+        </div>
+        
+        <?php if (empty($orders)): ?>
+            <p style="text-align: center; padding: 40px; color: #999;">No orders yet</p>
+        <?php else: ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($orders as $order): 
+                        $customer = $db->find('customers', $order['customer_id']);
+                        $itemCount = $db->count('order_items', ['order_id' => $order['id']]);
+                    ?>
+                        <tr>
+                            <td><strong><?= htmlspecialchars($order['order_number']) ?></strong></td>
+                            <td>
+                                <?= htmlspecialchars($customer['name']) ?><br>
+                                <small style="color: #999;"><?= htmlspecialchars($customer['email']) ?></small>
+                            </td>
+                            <td><?= $itemCount ?> item(s)</td>
+                            <td><strong>KES <?= number_format($order['total']) ?></strong></td>
+                            <td>
+                                <?php
+                                $statusColors = [
+                                    'pending' => 'warning',
+                                    'processing' => 'warning',
+                                    'shipped' => 'info',
+                                    'completed' => 'success',
+                                    'cancelled' => 'danger'
+                                ];
+                                $badgeClass = 'badge-' . ($statusColors[$order['status']] ?? 'warning');
+                                ?>
+                                <span class="badge <?= $badgeClass ?>">
+                                    <?= ucfirst($order['status']) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-<?= $order['payment_status'] === 'paid' ? 'success' : 'danger' ?>">
+                                    <?= ucfirst($order['payment_status']) ?>
+                                </span>
+                            </td>
+                            <td><?= date('M d, Y', strtotime($order['created_at'])) ?></td>
+                            <td>
+                                <a href="?page=order-details&id=<?= $order['id'] ?>" class="btn btn-primary btn-sm">View</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+
+<?php elseif ($page === 'order-details'): ?>
+    <!-- ORDER DETAILS -->
+    <?php
+    $order = $db->find('orders', $productId); // Using $productId as order id
+    
+    if (!$order || $order['business_id'] != $businessId) {
+        echo "<div class='alert alert-error'>Order not found</div>";
+    } else {
+        $customer = $db->find('customers', $order['customer_id']);
+        $items = $db->findAll('order_items', ['order_id' => $order['id']]);
+        
+        // Handle status update
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
+            $newStatus = $_POST['status'];
+            $db->update('orders', $order['id'], ['status' => $newStatus]);
+            echo "<script>alert('Order status updated!'); window.location='?page=order-details&id={$order['id']}';</script>";
+        }
+    ?>
+        <div class="content-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <div>
+                    <h2>Order <?= htmlspecialchars($order['order_number']) ?></h2>
+                    <p style="color: #666;">Placed on <?= date('F d, Y \a\t h:i A', strtotime($order['created_at'])) ?></p>
+                </div>
+                <a href="?page=orders" class="btn">← Back to Orders</a>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+                <!-- Left Column: Order Items -->
+                <div>
+                    <h3 class="mb-20">Order Items</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($items as $item): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($item['product_name']) ?></td>
+                                    <td>KES <?= number_format($item['price']) ?></td>
+                                    <td><?= $item['quantity'] ?></td>
+                                    <td><strong>KES <?= number_format($item['total']) ?></strong></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
+                                <td><strong style="font-size: 18px; color: #e67e22;">KES <?= number_format($order['total']) ?></strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    
+                    <?php if (!empty($order['notes'])): ?>
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+                            <strong>Order Notes:</strong><br>
+                            <?= nl2br(htmlspecialchars($order['notes'])) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                
+                <!-- Right Column: Customer & Status -->
+                <div>
+                    <!-- Customer Info -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 class="mb-20">Customer Information</h3>
+                        <p><strong>Name:</strong><br><?= htmlspecialchars($customer['name']) ?></p>
+                        <p><strong>Email:</strong><br><?= htmlspecialchars($customer['email']) ?></p>
+                        <p><strong>Phone:</strong><br><?= htmlspecialchars($customer['phone']) ?></p>
+                        <p><strong>Address:</strong><br><?= nl2br(htmlspecialchars($customer['address'] ?? 'N/A')) ?></p>
+                    </div>
+                    
+                    <!-- Update Status -->
+                    <div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                        <h3 class="mb-20">Update Order Status</h3>
+                        <form method="POST">
+                            <div class="form-group">
+                                <label>Order Status</label>
+                                <select name="status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="pending" <?= $order['status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
+                                    <option value="processing" <?= $order['status'] === 'processing' ? 'selected' : '' ?>>Processing</option>
+                                    <option value="shipped" <?= $order['status'] === 'shipped' ? 'selected' : '' ?>>Shipped</option>
+                                    <option value="completed" <?= $order['status'] === 'completed' ? 'selected' : '' ?>>Completed</option>
+                                    <option value="cancelled" <?= $order['status'] === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Payment Status</label>
+                                <p>
+                                    <span class="badge badge-<?= $order['payment_status'] === 'paid' ? 'success' : 'danger' ?>">
+                                        <?= ucfirst($order['payment_status']) ?>
+                                    </span>
+                                </p>
+                                <small style="color: #666;">Payment status will be updated via M-PESA in Week 4</small>
+                            </div>
+                            
+                            <button type="submit" name="update_status" class="btn btn-success" style="width: 100%;">Update Status</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php } ?>
+
+<?php elseif ($page === 'customers'): ?>
+    <!-- CUSTOMERS LIST -->
+    <div class="content-box">
+        <h2 class="mb-20">Customers</h2>
+        
+        <?php
+        $customers = $db->findAll('customers', ['business_id' => $businessId], 'created_at DESC');
+        ?>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Orders</th>
+                    <th>Total Spent</th>
+                    <th>Registered</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($customers as $customer): 
+                    $orderCount = $db->count('orders', ['customer_id' => $customer['id']]);
+                    $totalResult = $db->query("SELECT SUM(total) as total FROM orders WHERE customer_id = ?", [$customer['id']]);
+                    $totalSpent = $totalResult[0]['total'] ?? 0;
+                ?>
+                    <tr>
+                        <td><strong><?= htmlspecialchars($customer['name']) ?></strong></td>
+                        <td><?= htmlspecialchars($customer['email']) ?></td>
+                        <td><?= htmlspecialchars($customer['phone'] ?? 'N/A') ?></td>
+                        <td><?= $orderCount ?> order(s)</td>
+                        <td><strong>KES <?= number_format($totalSpent) ?></strong></td>
+                        <td><?= date('M d, Y', strtotime($customer['created_at'])) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
 <?php endif; ?>
