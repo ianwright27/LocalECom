@@ -217,6 +217,26 @@ if ($action === 'place-order' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $db->commit();
         
+        // Trigger notification: Order Placed
+        require_once '../app/services/NotificationService.php';
+        $notificationService = new NotificationService($db);
+        
+        $notificationService->send(
+            $businessId,
+            'order_placed',
+            [
+                'name' => $customerData['name'],
+                'email' => $customerData['email'],
+                'phone' => $customerData['phone']
+            ],
+            [
+                'name' => $customerData['name'],
+                'order_number' => $orderNumber,
+                'total' => number_format($total),
+                'items_count' => count($items)
+            ]
+        );
+        
         // Save order to session
         $_SESSION['last_order'] = [
             'id' => $orderId,

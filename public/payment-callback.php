@@ -97,6 +97,35 @@ $result = json_decode($response, true);
                 
                 $db->commit();
                 
+                // Trigger notification: Payment Received
+                try {
+                    require_once '../app/services/NotificationService.php';
+                    $notificationService = new NotificationService($db);
+                    
+                    $customer = $db->find('customers', $order['customer_id']);
+                    
+                    if ($customer) {
+                        $notificationService->send(
+                            $order['business_id'],
+                            'payment_received',
+                            [
+                                'name' => $customer['name'],
+                                'email' => $customer['email'],
+                                'phone' => $customer['phone']
+                            ],
+                            [
+                                'name' => $customer['name'],
+                                'order_number' => $order['order_number'],
+                                'amount' => number_format($data['amount'] / 100),
+                                'payment_method' => ucfirst($data['channel'])
+                            ]
+                        );
+                    }
+                } catch (Exception $notifError) {
+                    // Log but don't fail payment if notification fails
+                    error_log("Notification error: " . $notifError->getMessage());
+                }
+                
                 // Update session
                 $_SESSION['last_order'] = [
                     'id' => $orderId,

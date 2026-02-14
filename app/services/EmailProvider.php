@@ -17,6 +17,8 @@
  * @version 1.0
  */
 
+require_once __DIR__ . '/../../config/email.php';
+
 class EmailProvider {
     private $fromEmail;
     private $fromName;

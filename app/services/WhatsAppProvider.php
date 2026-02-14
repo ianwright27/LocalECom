@@ -19,6 +19,8 @@
  * @version 1.0
  */
 
+require_once __DIR__ . '/../../config/whatsapp.php';
+
 class WhatsAppProvider {
     private $phoneNumberId;
     private $accessToken;

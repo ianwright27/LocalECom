@@ -540,7 +540,7 @@ if ($page === 'dashboard'): ?>
                             </td>
                             <td>
                                 <span class="badge badge-<?= $order['payment_status'] === 'paid' ? 'success' : 'danger' ?>">
-                                    <?= ucfirst($order['payment_status']) ?: 'Pending' ?>
+                                    <?= ucfirst($order['payment_status']) ?>
                                 </span>
                             </td>
                             <td><?= date('M d, Y', strtotime($order['created_at'])) ?></td>
@@ -568,7 +568,46 @@ if ($page === 'dashboard'): ?>
         // Handle status update
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
             $newStatus = $_POST['status'];
+            $oldStatus = $order['status'];
+            
             $db->update('orders', $order['id'], ['status' => $newStatus]);
+            
+            // Trigger notification if status changed
+            if ($newStatus !== $oldStatus) {
+                require_once '../app/services/NotificationService.php';
+                $notificationService = new NotificationService($db);
+                
+                // Map status to notification event
+                $eventMap = [
+                    'processing' => 'order_processing',
+                    'shipped' => 'order_shipped',
+                    'completed' => 'order_completed'
+                ];
+                
+                $event = $eventMap[$newStatus] ?? null;
+                
+                if ($event) {
+                    $notificationService->send(
+                        $order['business_id'],
+                        $event,
+                        [
+                            'name' => $customer['name'],
+                            'email' => $customer['email'],
+                            'phone' => $customer['phone']
+                        ],
+                        [
+                            'name' => $customer['name'],
+                            'order_number' => $order['order_number'],
+                            'total' => number_format($order['total']),
+                            'status' => ucfirst($newStatus),
+                            'tracking_number' => 'TRK-' . $order['order_number'], // Placeholder
+                            'delivery_date' => date('M d, Y', strtotime('+3 days')), // Placeholder
+                            'rating_link' => 'https://wrightcommerce.com/rate/' . $order['id'] // Placeholder
+                        ]
+                    );
+                }
+            }
+            
             echo "<script>alert('Order status updated!'); window.location='?page=order-details&id={$order['id']}';</script>";
         }
     ?>
@@ -701,6 +740,164 @@ if ($page === 'dashboard'): ?>
                 <?php endforeach; ?>
             </tbody>
         </table>
+    </div>
+
+<?php elseif ($page === 'notifications'): ?>
+    <!-- NOTIFICATION SETTINGS -->
+    <?php
+    // Get current business
+    $business = $db->find('businesses', $businessId);
+    $settings = json_decode($business['settings'] ?? '{}', true);
+    $notifications = $settings['notifications'] ?? [];
+    
+    // Handle settings update
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_notifications'])) {
+        $newNotifications = [
+            'sms_enabled' => isset($_POST['sms_enabled']),
+            'whatsapp_enabled' => isset($_POST['whatsapp_enabled']),
+            'email_enabled' => isset($_POST['email_enabled']),
+            'sms_sender_id' => $_POST['sms_sender_id'] ?? 'WrightComm'
+        ];
+        
+        $settings['notifications'] = $newNotifications;
+        
+        $db->update('businesses', $businessId, [
+            'settings' => json_encode($settings)
+        ]);
+        
+        echo "<script>alert('Notification settings updated!'); window.location='?page=notifications';</script>";
+    }
+    
+    // Get current settings
+    $smsEnabled = $notifications['sms_enabled'] ?? false;
+    $whatsappEnabled = $notifications['whatsapp_enabled'] ?? false;
+    $emailEnabled = $notifications['email_enabled'] ?? true;
+    $smsSenderId = $notifications['sms_sender_id'] ?? 'WrightComm';
+    ?>
+    
+    <div class="content-box">
+        <h2 class="mb-20">🔔 Notification Settings</h2>
+        
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #ffc107;">
+            <strong>📱 Notification Channels</strong><br>
+            Enable notification channels that you have paid for. Email is free for all businesses.
+        </div>
+        
+        <form method="POST">
+            <!-- Email Notifications -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2ecc71;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="margin-bottom: 10px;">📧 Email Notifications</h3>
+                        <p style="color: #666; margin-bottom: 10px;">Send order updates via email</p>
+                        <p style="font-size: 13px; color: #2ecc71;">✅ FREE - No charges</p>
+                    </div>
+                    <div>
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" name="email_enabled" <?= $emailEnabled ? 'checked' : '' ?> style="width: 24px; height: 24px; margin-right: 10px;">
+                            <span style="font-weight: 600;">Enable</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SMS Notifications -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3498db;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <h3 style="margin-bottom: 10px;">📱 SMS Notifications</h3>
+                        <p style="color: #666; margin-bottom: 10px;">Send order updates via SMS (Africa's Talking)</p>
+                        <p style="font-size: 13px; color: #e67e22;">💰 PAID - ~KES 0.50 per SMS</p>
+                        <p style="font-size: 12px; color: #999; margin-top: 5px;">You need to buy SMS credits and add your API key</p>
+                    </div>
+                    <div>
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" name="sms_enabled" <?= $smsEnabled ? 'checked' : '' ?> style="width: 24px; height: 24px; margin-right: 10px;">
+                            <span style="font-weight: 600;">Enable</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <?php if ($smsEnabled): ?>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+                    <div class="form-group">
+                        <label>SMS Sender ID (Optional)</label>
+                        <input type="text" name="sms_sender_id" value="<?= htmlspecialchars($smsSenderId) ?>" placeholder="WRIGHTCOMM" maxlength="11" style="max-width: 300px;">
+                        <p style="font-size: 12px; color: #999; margin-top: 5px;">Max 11 characters, alphanumeric only. Requires approval in production.</p>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+            
+            <!-- WhatsApp Notifications -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #25D366;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="margin-bottom: 10px;">💬 WhatsApp Notifications</h3>
+                        <p style="color: #666; margin-bottom: 10px;">Send order updates via WhatsApp (Meta Cloud API)</p>
+                        <p style="font-size: 13px; color: #e67e22;">💰 PAID - Business pricing applies</p>
+                        <p style="font-size: 12px; color: #999; margin-top: 5px;">You need Meta Business account and approved templates</p>
+                    </div>
+                    <div>
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" name="whatsapp_enabled" <?= $whatsappEnabled ? 'checked' : '' ?> style="width: 24px; height: 24px; margin-right: 10px;">
+                            <span style="font-weight: 600;">Enable</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Events -->
+            <div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px;">🔔 Notification Events</h3>
+                <p style="color: #666; margin-bottom: 15px;">Notifications are automatically sent for these events:</p>
+                
+                <ul style="list-style: none; padding: 0;">
+                    <li style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                        ✅ <strong>Order Placed</strong> - When customer places an order
+                    </li>
+                    <li style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                        ✅ <strong>Payment Received</strong> - When payment is confirmed
+                    </li>
+                    <li style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                        ✅ <strong>Order Processing</strong> - When you start processing the order
+                    </li>
+                    <li style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                        ✅ <strong>Order Shipped</strong> - When you mark order as shipped
+                    </li>
+                    <li style="padding: 10px 0;">
+                        ✅ <strong>Order Completed</strong> - When order is delivered/completed
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Setup Guide -->
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
+                <h3 style="margin-bottom: 15px;">📚 Setup Guide</h3>
+                
+                <p style="margin-bottom: 10px;"><strong>For SMS (Africa's Talking):</strong></p>
+                <ol style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>Create account at <a href="https://africastalking.com" target="_blank">africastalking.com</a></li>
+                    <li>Get your API key from the dashboard</li>
+                    <li>Add credentials to <code>config/africastalking.php</code></li>
+                    <li>Buy SMS credits (Production) or use sandbox (Testing)</li>
+                    <li>Enable SMS above</li>
+                </ol>
+                
+                <p style="margin-bottom: 10px;"><strong>For WhatsApp (Meta):</strong></p>
+                <ol style="margin-left: 20px;">
+                    <li>Create Meta Business Account</li>
+                    <li>Set up WhatsApp Business API</li>
+                    <li>Create and get approval for message templates</li>
+                    <li>Add credentials to <code>config/whatsapp.php</code></li>
+                    <li>Enable WhatsApp above</li>
+                </ol>
+            </div>
+            
+            <button type="submit" name="update_notifications" class="btn btn-success" style="padding: 12px 30px; font-size: 16px;">
+                💾 Save Notification Settings
+            </button>
+        </form>
     </div>
 
 <?php endif; ?>

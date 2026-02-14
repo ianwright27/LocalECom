@@ -106,3 +106,29 @@ ADD FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
 
 ALTER TABLE payments ADD INDEX idx_reference (reference);
 ALTER TABLE payments ADD INDEX idx_business_id (business_id);
+
+
+CREATE TABLE IF NOT EXISTS notification_logs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    business_id INT NOT NULL,
+    event VARCHAR(50) NOT NULL,
+    channel VARCHAR(20) NULL,
+    recipient VARCHAR(255) NULL,
+    status ENUM('sent', 'failed', 'skipped') DEFAULT 'sent',
+    response TEXT NULL,
+    data JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+    INDEX idx_business_id (business_id),
+    INDEX idx_event (event),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Add settings column to businesses table if it doesn't exist
+ALTER TABLE businesses 
+ADD COLUMN IF NOT EXISTS settings JSON NULL AFTER description;
+
+-- Verify tables
+DESCRIBE notification_logs;
+DESCRIBE businesses;

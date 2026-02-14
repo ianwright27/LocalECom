@@ -17,6 +17,8 @@
  * @version 1.0
  */
 
+require_once __DIR__ . '/../../config/africastalking.php';
+
 class SMSProvider {
     private $username;
     private $apiKey;

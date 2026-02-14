@@ -377,7 +377,7 @@ if ($page === 'login'): ?>
         <script>
         function payWithPaystack() {
             const handler = PaystackPop.setup({
-                // key: 'pk_test_0b3....................322', // Replace with your Paystack public key
+                key: 'pk_test_0b3f74c2a4b98b6db13d2ab400832e27b5390322', // Replace with your Paystack public key
                 email: '<?= htmlspecialchars($customer['email']) ?>',
                 amount: <?= $order['total'] * 100 ?>, // Amount in kobo (multiply by 100)
                 currency: 'KES',

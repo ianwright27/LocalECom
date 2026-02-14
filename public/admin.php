@@ -154,6 +154,7 @@ if ($action === 'logout') {
         <a href="?page=customers" class="<?= $page === 'customers' ? 'active' : '' ?>">👥 Customers</a>
         <a href="?page=low-stock" class="<?= $page === 'low-stock' ? 'active' : '' ?>">⚠️ Low Stock</a>
         <a href="?page=categories" class="<?= $page === 'categories' ? 'active' : '' ?>">🏷️ Categories</a>
+        <a href="?page=notifications" class="<?= $page === 'notifications' ? 'active' : '' ?>">🔔 Notifications</a>
         <a href="?page=add-product" class="<?= $page === 'add-product' ? 'active' : '' ?>">➕ Add Product</a>
         
         <div class="user-info">
