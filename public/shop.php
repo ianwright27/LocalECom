@@ -229,8 +229,18 @@ if ($action === 'place-order' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         // Clear cart
         $_SESSION['cart'] = [];
         
-        header('Location: shop.php?page=confirmation');
-        exit;
+        // Get payment method
+        $paymentMethod = $_POST['payment_method'] ?? 'paystack';
+        
+        if ($paymentMethod === 'paystack') {
+            // Redirect to payment page
+            header('Location: shop.php?page=payment&order_id=' . $orderId);
+            exit;
+        } else {
+            // For other payment methods (future)
+            header('Location: shop.php?page=confirmation');
+            exit;
+        }
         
     } catch (Exception $e) {
         $db->rollback();

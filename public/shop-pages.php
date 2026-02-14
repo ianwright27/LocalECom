@@ -289,6 +289,20 @@ if ($page === 'login'): ?>
                 
                 <hr style="margin: 30px 0;">
                 
+                <h3 class="mb-20">Payment Method</h3>
+                
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; padding: 15px; border: 2px solid #2ecc71; border-radius: 8px; background: #f0fff4; cursor: pointer;">
+                        <input type="radio" name="payment_method" value="paystack" checked style="margin-right: 10px;">
+                        <strong>💳 Pay Now (M-PESA / Card)</strong> - Recommended
+                        <p style="margin: 10px 0 0 30px; color: #666; font-size: 13px;">
+                            Secure payment via Paystack. Pay with M-PESA, Debit or Credit Card.
+                        </p>
+                    </label>
+                </div>
+                
+                <hr style="margin: 30px 0;">
+                
                 <h3 class="mb-20">Order Summary</h3>
                 
                 <?php
@@ -320,6 +334,83 @@ if ($page === 'login'): ?>
             </form>
         </div>
     <?php endif; ?>
+
+<?php elseif ($page === 'payment'): ?>
+    <!-- PAYMENT PAGE -->
+    <?php
+    $orderId = $_GET['order_id'] ?? null;
+    
+    if (!$orderId || !$isCustomerLoggedIn) {
+        echo "<div class='alert alert-info'>Invalid request. <a href='shop.php'>Go back</a></div>";
+    } else {
+        $order = $db->find('orders', $orderId);
+        $customer = $db->find('customers', $_SESSION['customer_id']);
+        
+        if (!$order) {
+            echo "<div class='alert alert-info'>Order not found. <a href='shop.php'>Go back</a></div>";
+        } else {
+    ?>
+        <div class="checkout-form">
+            <h2 class="text-center mb-20">Complete Payment</h2>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <h3>Order Details</h3>
+                <p><strong>Order Number:</strong> <?= htmlspecialchars($order['order_number']) ?></p>
+                <p><strong>Amount:</strong> <span style="color: #e67e22; font-size: 24px; font-weight: 700;">KES <?= number_format($order['total']) ?></span></p>
+                <p><strong>Status:</strong> <span class="badge badge-warning">Pending Payment</span></p>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 30px;">
+                <strong>📱 Payment via Paystack</strong><br>
+                Click the button below to proceed to secure payment.<br>
+                You can pay using M-PESA, Debit Card, or Credit Card.
+            </div>
+            
+            <button onclick="payWithPaystack()" class="btn btn-success" style="width: 100%; padding: 15px; font-size: 18px;">
+                💳 Pay KES <?= number_format($order['total']) ?>
+            </button>
+            
+            <a href="shop.php" class="btn" style="width: 100%; text-align: center; margin-top: 10px;">Cancel</a>
+        </div>
+        
+        <script src="https://js.paystack.co/v1/inline.js"></script>
+        <script>
+        function payWithPaystack() {
+            const handler = PaystackPop.setup({
+                // key: 'pk_test_0b3....................322', // Replace with your Paystack public key
+                email: '<?= htmlspecialchars($customer['email']) ?>',
+                amount: <?= $order['total'] * 100 ?>, // Amount in kobo (multiply by 100)
+                currency: 'KES',
+                ref: 'WC-<?= $order['order_number'] ?>-' + Math.floor((Math.random() * 1000000000) + 1),
+                metadata: {
+                    custom_fields: [
+                        {
+                            display_name: "Customer Name",
+                            variable_name: "customer_name",
+                            value: "<?= htmlspecialchars($customer['name']) ?>"
+                        },
+                        {
+                            display_name: "Order Number",
+                            variable_name: "order_number",
+                            value: "<?= htmlspecialchars($order['order_number']) ?>"
+                        }
+                    ]
+                },
+                callback: function(response) {
+                    // Payment successful
+                    window.location.href = 'payment-callback.php?reference=' + response.reference + '&order_id=<?= $orderId ?>';
+                },
+                onClose: function() {
+                    alert('Payment cancelled. You can try again or contact support.');
+                }
+            });
+            handler.openIframe();
+        }
+        </script>
+    <?php 
+        }
+    }
+    ?>
 
 <?php elseif ($page === 'confirmation'): ?>
     <!-- ORDER CONFIRMATION -->

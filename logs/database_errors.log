@@ -7,3 +7,4 @@
 [2026-02-11 13:22:57] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
 [2026-02-11 13:25:28] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
 [2026-02-12 14:16:24] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
+[2026-02-14 10:11:18] Find Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reference' in 'where clause' | Table: payments

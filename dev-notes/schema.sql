@@ -91,3 +91,18 @@ CREATE TABLE payments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
+
+-- Run this in phpMyAdmin
+ALTER TABLE payments 
+ADD COLUMN business_id INT NOT NULL AFTER id,
+ADD COLUMN reference VARCHAR(255) NULL AFTER order_id,
+ADD COLUMN currency VARCHAR(10) DEFAULT 'KES' AFTER amount,
+ADD COLUMN payment_method VARCHAR(50) DEFAULT 'paystack' AFTER currency,
+ADD COLUMN paid_at DATETIME NULL AFTER status,
+ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at;
+
+ALTER TABLE payments 
+ADD FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+ALTER TABLE payments ADD INDEX idx_reference (reference);
+ALTER TABLE payments ADD INDEX idx_business_id (business_id);

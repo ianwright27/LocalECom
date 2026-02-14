@@ -540,7 +540,7 @@ if ($page === 'dashboard'): ?>
                             </td>
                             <td>
                                 <span class="badge badge-<?= $order['payment_status'] === 'paid' ? 'success' : 'danger' ?>">
-                                    <?= ucfirst($order['payment_status']) ?>
+                                    <?= ucfirst($order['payment_status']) ?: 'Pending' ?>
                                 </span>
                             </td>
                             <td><?= date('M d, Y', strtotime($order['created_at'])) ?></td>
