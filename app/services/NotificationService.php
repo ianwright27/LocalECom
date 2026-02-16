@@ -250,14 +250,14 @@ class NotificationService {
      */
     private function getWhatsAppTemplate($event) {
         $templates = [
-            'order_placed' => 'order_confirmation',
-            'payment_received' => 'payment_confirmation',
-            'order_processing' => 'order_processing',
-            'order_shipped' => 'order_shipped',
-            'order_completed' => 'order_delivered'
+            'order_placed' => 'hello_world', // Use your actual template name
+            'payment_received' => 'hello_world',
+            'order_processing' => 'hello_world',
+            'order_shipped' => 'hello_world',
+            'order_completed' => 'hello_world'
         ];
         
-        return $templates[$event] ?? 'order_update';
+        return $templates[$event] ?? 'hello_world';
     }
     
     /**

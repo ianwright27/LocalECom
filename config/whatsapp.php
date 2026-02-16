@@ -12,8 +12,12 @@
  */
 
 // WhatsApp Cloud API Credentials
-define('WHATSAPP_PHONE_NUMBER_ID', 'your_phone_number_id_here'); // From WhatsApp Business App
-define('WHATSAPP_ACCESS_TOKEN', 'your_access_token_here'); // From Meta App Dashboard
+// define('WHATSAPP_PHONE_NUMBER_ID', 'your_phone_number_id_here'); // From WhatsApp Business App
+// define('WHATSAPP_ACCESS_TOKEN', 'your_access_token_here'); // From Meta App Dashboard
+// define('WHATSAPP_APP_SECRET', 'your_app_secret_here'); // For webhook verification
+
+define('WHATSAPP_PHONE_NUMBER_ID', '1062....4890'); // From WhatsApp Business App
+define('WHATSAPP_ACCESS_TOKEN', 'EAAMtxSEP8A0BQn.....V8dI86aqoMPsggZDZD'); // From Meta App Dashboard
 define('WHATSAPP_APP_SECRET', 'your_app_secret_here'); // For webhook verification
 
 // Webhook Settings

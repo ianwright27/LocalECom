@@ -19,12 +19,10 @@
  * @version 1.0
  */
 
-require_once __DIR__ . '/../../config/whatsapp.php';
-
 class WhatsAppProvider {
     private $phoneNumberId;
     private $accessToken;
-    private $apiVersion = 'v22.0';
+    private $apiVersion = 'v18.0';
     private $baseUrl;
     
     public function __construct() {
@@ -48,10 +46,10 @@ class WhatsAppProvider {
      * @param string $to Recipient phone number (+254712345678)
      * @param string $templateName Template name (must be pre-approved)
      * @param array $parameters Template parameters
-     * @param string $languageCode Template language (default: en)
+     * @param string $languageCode Template language (default: en_US)
      * @return array Result with success status
      */
-    public function sendTemplate($to, $templateName, $parameters = [], $languageCode = 'en') {
+    public function sendTemplate($to, $templateName, $parameters = [], $languageCode = 'en_US') {
         if (empty($this->phoneNumberId) || empty($this->accessToken)) {
             return [
                 'success' => false,
@@ -109,12 +107,19 @@ class WhatsAppProvider {
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
         
         $result = json_decode($response, true);
         
-        // Log for debugging
+        // Log for debugging - IMPORTANT: Shows exact API response
+        error_log("WhatsApp API Request URL: " . $url);
+        error_log("WhatsApp API Request Payload: " . json_encode($payload));
+        error_log("WhatsApp API HTTP Code: " . $httpCode);
         error_log("WhatsApp API Response: " . $response);
+        if ($curlError) {
+            error_log("WhatsApp cURL Error: " . $curlError);
+        }
         
         // Check if successful
         if ($httpCode === 200 && isset($result['messages'])) {
