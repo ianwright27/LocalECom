@@ -80,7 +80,7 @@ class AuthController extends BaseController {
             $this->db->commit();
             
             // Auto-login after registration
-            session_start();
+            if (session_status() === PHP_SESSION_NONE) session_start();;
             $_SESSION['user_id'] = $userId;
             $_SESSION['business_id'] = $businessId;
             $_SESSION['user_email'] = $email;
@@ -148,7 +148,7 @@ class AuthController extends BaseController {
         $business = $this->db->find('businesses', $user['business_id']);
         
         // Create session
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) session_start();;
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['business_id'] = $user['business_id'];
         $_SESSION['user_email'] = $user['email'];
@@ -181,7 +181,7 @@ class AuthController extends BaseController {
         $email = $_SESSION['user_email'] ?? 'unknown';
         
         // Destroy session
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) session_start();;
         session_destroy();
         
         $this->log("User logged out: {$email}");
@@ -459,7 +459,7 @@ class AuthController extends BaseController {
      * Check if user is authenticated (useful for frontend)
      */
     public function check() {
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) session_start();;
         
         if (isset($_SESSION['user_id'])) {
             return $this->success([

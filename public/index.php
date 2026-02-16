@@ -9,7 +9,18 @@
  * @version 1.0
  */
 
-require_once __DIR__ . '/../config/cors.php'; // CORS configuration for React frontend
+
+// ============================================
+// CORS CONFIGURATION (MUST BE FIRST)
+// ============================================
+require_once __DIR__ . '/../config/cors.php';
+
+// ============================================
+// START SESSION (ONLY ONCE)
+// ============================================
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // ============================================
 // ERROR REPORTING (Change for production)
@@ -102,7 +113,9 @@ $router->get('/test-db', function() {
 
 // Debug session (REMOVE IN PRODUCTION!)
 $router->get('/debug/session', function() {
-    session_start();
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     echo json_encode([
         'session_exists' => session_status() === PHP_SESSION_ACTIVE,
         'session_id' => session_id(),
