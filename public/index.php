@@ -9,6 +9,8 @@
  * @version 1.0
  */
 
+require_once __DIR__ . '/../config/cors.php'; // CORS configuration for React frontend
+
 // ============================================
 // ERROR REPORTING (Change for production)
 // ============================================
