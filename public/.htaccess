@@ -1,46 +1,43 @@
 # WrightCommerce API - Apache Configuration
-# This file enables clean URLs and routes all requests through index.php
+# Clean URLs and single entry point routing
+# CORS is handled in PHP (cors.php), NOT here
 
-# Enable Rewrite Engine
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    
-    # Set the base directory (change this in production if needed)
+
+    # Base path for the project
     RewriteBase /wrightcommerce/public/
-    
-    # If the requested file or directory exists, serve it directly
-    # This allows access to actual files like images, CSS, JS
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    
-    # Otherwise, route everything through index.php
-    RewriteRule ^(.*)$ index.php [QSA,L]
+
+    # Allow direct access to existing files and folders
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Route all other requests to index.php
+    RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
-# Security Headers
 <IfModule mod_headers.c>
-    # CORS Headers (for React app)
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    Header set Access-Control-Allow-Origin "http://localhost:3000"
+    Header set Access-Control-Allow-Credentials "true"
+    Header set Vary "Origin"
 </IfModule>
 
-# Disable directory browsing
+# Disable directory listing
 Options -Indexes
 
-# Prevent access to sensitive files
+# Protect hidden and sensitive files
 <FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
-# Set default charset
+# Default character encoding
 AddDefaultCharset UTF-8
 
-# PHP settings (optional)
+# PHP settings (development only)
 <IfModule mod_php.c>
     php_flag display_errors On
     php_value error_reporting E_ALL
-    # Change to Off in production:
+    # ⚠️ Disable in production:
     # php_flag display_errors Off
 </IfModule>

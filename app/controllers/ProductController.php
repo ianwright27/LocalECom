@@ -11,7 +11,7 @@
  * - Inventory tracking
  * 
  * @author WrightCommerce Team
- * @version 1.0
+ * @version 1.1 - FIXED: Category filter now works correctly
  */
 
 require_once __DIR__ . '/BaseController.php';
@@ -24,6 +24,7 @@ class ProductController extends BaseController {
      * 
      * Query Parameters:
      * - status: Filter by status (active, inactive, deleted)
+     * - category: Filter by category (FIXED!)
      * - search: Search in name, description, SKU
      * - min_price: Minimum price filter
      * - max_price: Maximum price filter
@@ -42,6 +43,7 @@ class ProductController extends BaseController {
         
         // Get filter parameters
         $status = $this->input('status', 'active');
+        $category = $this->input('category'); // ✅ FIXED: Now reads category
         $search = $this->input('search');
         $minPrice = $this->input('min_price');
         $maxPrice = $this->input('max_price');
@@ -53,6 +55,11 @@ class ProductController extends BaseController {
         // Add status filter
         if ($status) {
             $conditions['status'] = $status;
+        }
+        
+        // ✅ FIXED: Add category filter to simple path
+        if ($category) {
+            $conditions['category'] = $category;
         }
         
         // For simple filters, use findAll
@@ -73,6 +80,12 @@ class ProductController extends BaseController {
             if ($status) {
                 $whereClauses[] = "status = ?";
                 $params[] = $status;
+            }
+            
+            // ✅ FIXED: Add category to complex path too
+            if ($category) {
+                $whereClauses[] = "category = ?";
+                $params[] = $category;
             }
             
             if ($search) {
@@ -446,7 +459,10 @@ class ProductController extends BaseController {
             $limit
         ]);
         
-        return $this->success($products, "Found " . count($products) . " products");
+        return $this->success([
+            'items' => $products,
+            'count' => count($products)
+        ], "Found " . count($products) . " products");
     }
     
     /**

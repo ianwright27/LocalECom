@@ -176,23 +176,25 @@ $router->group('/api/v1', function($router) {
     // ============================================
     // TODO: Create OrderController in Week 3
     
-    // $router->get('/orders', 'OrderController@index');                        // List all orders
-    // $router->get('/orders/{id}', 'OrderController@show');                    // Get single order
-    // $router->post('/orders', 'OrderController@store');                       // Create order
-    // $router->put('/orders/{id}', 'OrderController@update');                  // Update order
-    // $router->delete('/orders/{id}', 'OrderController@destroy');              // Cancel order
-    // $router->patch('/orders/{id}/status', 'OrderController@updateStatus');   // Update order status
-    // $router->get('/orders/stats', 'OrderController@stats');                  // Order statistics
+    $router->get('/orders', 'OrderController@index');                        // List all orders
+    
+    $router->get('/orders/search', 'OrderController@search');                            // Search orders
+    $router->get('/orders/{id}', 'OrderController@show');                    // Get single order
+    $router->post('/orders', 'OrderController@store');                       // Create order
+    $router->put('/orders/{id}', 'OrderController@update');                  // Update order
+    $router->delete('/orders/{id}', 'OrderController@destroy');              // Cancel order
+    $router->patch('/orders/{id}/status', 'OrderController@updateStatus');   // Update order status
+    $router->get('/orders/stats', 'OrderController@stats');                  // Order statistics
     
     // ============================================
     // CUSTOMER ROUTES (Week 3)
     // ============================================
     // TODO: Create CustomerController in Week 3
     
-    // $router->resource('customers', 'CustomerController');                    // RESTful routes
-    // $router->get('/customers/{id}/orders', 'CustomerController@orders');     // Customer orders
-    // $router->get('/customers/{id}/stats', 'CustomerController@stats');       // Customer stats
-    // $router->get('/customers/search', 'CustomerController@search');          // Search customers
+    $router->resource('customers', 'CustomerController');                    // RESTful routes
+    $router->get('/customers/{id}/orders', 'CustomerController@orders');     // Customer orders
+    $router->get('/customers/{id}/stats', 'CustomerController@stats');       // Customer stats
+    $router->get('/customers/search', 'CustomerController@search');          // Search customers
     
     // ============================================
     // PAYMENT ROUTES (Week 4)

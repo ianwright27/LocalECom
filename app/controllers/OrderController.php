@@ -11,7 +11,7 @@
  * - Order statistics
  * 
  * @author WrightCommerce Team
- * @version 1.0
+ * @version 1.1 - FIXED: search condition bug, date parameter names aligned with React
  */
 
 require_once __DIR__ . '/BaseController.php';
@@ -26,8 +26,8 @@ class OrderController extends BaseController {
      * - status: Filter by order status
      * - payment_status: Filter by payment status
      * - customer_id: Filter by customer
-     * - from_date: Filter from date
-     * - to_date: Filter to date
+     * - date_from: Filter from date (matches React frontend)
+     * - date_to: Filter to date (matches React frontend)
      * - page: Page number
      * - per_page: Items per page
      */
@@ -41,10 +41,10 @@ class OrderController extends BaseController {
         $status = $this->input('status');
         $paymentStatus = $this->input('payment_status');
         $customerId = $this->input('customer_id');
-        $fromDate = $this->input('from_date');
-        $toDate = $this->input('to_date');
-        
-        // Build query
+        $dateFrom = $this->input('date_from'); // ✅ Matches React: ?date_from=2026-01-01
+        $dateTo = $this->input('date_to');     // ✅ Matches React: ?date_to=2026-12-31
+
+        // Build base conditions for simple path
         $conditions = ['business_id' => $businessId];
         
         if ($status) {
@@ -56,46 +56,48 @@ class OrderController extends BaseController {
         if ($customerId) {
             $conditions['customer_id'] = $customerId;
         }
-        
-        // For date filters, we need custom SQL
-        if ($fromDate || $toDate) {
-            $sql = "SELECT * FROM orders WHERE business_id = ?";
+        // ✅ NOTE: 'search' is NOT added here - it's not a column,
+        // search has its own dedicated route: GET /api/v1/orders/search
+
+        // For date filters, use custom SQL
+        if ($dateFrom || $dateTo) {
+            $whereClauses = ["business_id = ?"];
             $params = [$businessId];
-            
+
             if ($status) {
-                $sql .= " AND status = ?";
+                $whereClauses[] = "status = ?";
                 $params[] = $status;
             }
             if ($paymentStatus) {
-                $sql .= " AND payment_status = ?";
+                $whereClauses[] = "payment_status = ?";
                 $params[] = $paymentStatus;
             }
             if ($customerId) {
-                $sql .= " AND customer_id = ?";
+                $whereClauses[] = "customer_id = ?";
                 $params[] = $customerId;
             }
-            if ($fromDate) {
-                $sql .= " AND DATE(created_at) >= ?";
-                $params[] = $fromDate;
+            if ($dateFrom) {
+                $whereClauses[] = "DATE(created_at) >= ?";
+                $params[] = $dateFrom;
             }
-            if ($toDate) {
-                $sql .= " AND DATE(created_at) <= ?";
-                $params[] = $toDate;
+            if ($dateTo) {
+                $whereClauses[] = "DATE(created_at) <= ?";
+                $params[] = $dateTo;
             }
-            
-            $sql .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+
+            $whereClause = implode(' AND ', $whereClauses);
+
+            // Get total count
+            $countSql = "SELECT COUNT(*) as count FROM orders WHERE {$whereClause}";
+            $countResult = $this->db->query($countSql, $params);
+            $total = $countResult[0]['count'];
+
+            // Get orders
+            $sql = "SELECT * FROM orders WHERE {$whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?";
             $params[] = $pagination['limit'];
             $params[] = $pagination['offset'];
-            
             $orders = $this->db->query($sql, $params);
-            
-            // Get total count
-            $countSql = str_replace('SELECT *', 'SELECT COUNT(*) as count', $sql);
-            $countSql = preg_replace('/ORDER BY.*$/i', '', $countSql);
-            $countSql = preg_replace('/LIMIT.*$/i', '', $countSql);
-            $countParams = array_slice($params, 0, -2);
-            $totalResult = $this->db->query($countSql, $countParams);
-            $total = $totalResult[0]['count'];
+
         } else {
             // Simple query without date filters
             $total = $this->db->count('orders', $conditions);
@@ -108,14 +110,17 @@ class OrderController extends BaseController {
             );
         }
         
-        // Enrich with customer info
+        // Enrich with customer info and item count
         foreach ($orders as &$order) {
             $customer = $this->db->find('customers', $order['customer_id']);
-            $order['customer'] = $customer;
+            $order['customer_name'] = $customer['name'] ?? 'N/A';
+            $order['customer_email'] = $customer['email'] ?? 'N/A';
+            $order['customer_phone'] = $customer['phone'] ?? 'N/A';
             
-            // Get item count
-            $itemCount = $this->db->count('order_items', ['order_id' => $order['id']]);
-            $order['item_count'] = $itemCount;
+            // Get items
+            $items = $this->db->findAll('order_items', ['order_id' => $order['id']]);
+            $order['items'] = $items;
+            $order['item_count'] = count($items);
         }
         
         return $this->paginate($orders, $total, $pagination);
@@ -136,18 +141,28 @@ class OrderController extends BaseController {
         }
         
         // Get customer details
-        $order['customer'] = $this->db->find('customers', $order['customer_id']);
+        $customer = $this->db->find('customers', $order['customer_id']);
+        $order['customer_name'] = $customer['name'] ?? 'N/A';
+        $order['customer_email'] = $customer['email'] ?? 'N/A';
+        $order['customer_phone'] = $customer['phone'] ?? 'N/A';
+        $order['shipping_address'] = $customer['address'] ?? '';
         
         // Get order items with product details
         $items = $this->db->findAll('order_items', ['order_id' => $id]);
         foreach ($items as &$item) {
             $product = $this->db->find('products', $item['product_id']);
-            $item['product'] = $product;
+            if ($product) {
+                $item['image'] = $product['image'];
+            }
         }
         $order['items'] = $items;
         
         // Get payments
-        $order['payments'] = $this->db->findAll('payments', ['order_id' => $id]);
+        $payments = $this->db->findAll('payments', ['order_id' => $id]);
+        $order['payments'] = $payments;
+        if (!empty($payments)) {
+            $order['payment_method'] = $payments[0]['payment_method'] ?? 'N/A';
+        }
         
         return $this->success($order, 'Order retrieved successfully');
     }
@@ -188,7 +203,7 @@ class OrderController extends BaseController {
             if (!$customer) {
                 // Create new customer
                 $customerId = $this->db->insert('customers', [
-                    'business_id' => 1, // For marketplace, use default or get from product
+                    'business_id' => 1,
                     'name' => $this->sanitize($customerData['name']),
                     'email' => $customerData['email'],
                     'phone' => $this->formatPhone($customerData['phone']),
@@ -247,7 +262,7 @@ class OrderController extends BaseController {
                 'notes' => $this->sanitize($notes)
             ]);
             
-            // Create order items
+            // Create order items and update stock
             foreach ($orderItems as $item) {
                 $this->db->insert('order_items', [
                     'order_id' => $orderId,
@@ -287,7 +302,7 @@ class OrderController extends BaseController {
      * PATCH /api/v1/orders/{id}/status
      * Update order status
      * 
-     * Body: {status: 'pending|processing|completed|cancelled'}
+     * Body: {status: 'pending|processing|shipped|completed|cancelled'}
      */
     public function updateStatus($id) {
         $this->requireAuth();
@@ -335,9 +350,7 @@ class OrderController extends BaseController {
             $this->db->beginTransaction();
             
             // Update order status
-            $this->db->update('orders', $id, [
-                'status' => 'cancelled'
-            ]);
+            $this->db->update('orders', $id, ['status' => 'cancelled']);
             
             // Restore product stock
             $items = $this->db->findAll('order_items', ['order_id' => $id]);
@@ -361,6 +374,61 @@ class OrderController extends BaseController {
             $this->db->rollback();
             return $this->serverError('Failed to cancel order');
         }
+    }
+
+    /**
+     * GET /api/v1/orders/search
+     * Search orders by order number or customer name/email
+     * Route: GET /api/v1/orders/search?q=ORD-001
+     */
+    public function search() {
+        $this->requireAuth();
+        
+        $query = $this->input('q');
+        $limit = min(50, (int) $this->input('limit', 10));
+        
+        if (!$query) {
+            return $this->error('Search query is required', 400);
+        }
+        
+        $businessId = $this->getBusinessId();
+        
+        $sql = "SELECT o.* 
+                FROM orders o
+                LEFT JOIN customers c ON o.customer_id = c.id
+                WHERE o.business_id = ? 
+                AND (
+                    o.order_number LIKE ? 
+                    OR c.name LIKE ? 
+                    OR c.email LIKE ?
+                )
+                ORDER BY o.created_at DESC
+                LIMIT ?";
+        
+        $searchTerm = "%{$query}%";
+        $orders = $this->db->query($sql, [
+            $businessId,
+            $searchTerm,
+            $searchTerm,
+            $searchTerm,
+            $limit
+        ]);
+        
+        // Enrich with customer info
+        foreach ($orders as &$order) {
+            if ($order['customer_id']) {
+                $customer = $this->db->find('customers', $order['customer_id']);
+                $order['customer_name'] = $customer['name'] ?? 'N/A';
+                $order['customer_email'] = $customer['email'] ?? 'N/A';
+            }
+            $items = $this->db->findAll('order_items', ['order_id' => $order['id']]);
+            $order['items'] = $items;
+        }
+        
+        return $this->success([
+            'items' => $orders,
+            'count' => count($orders)
+        ], "Found " . count($orders) . " orders");
     }
     
     /**
@@ -393,7 +461,6 @@ class OrderController extends BaseController {
         $stats['unpaid_revenue'] = (float) ($revenueResult[0]['unpaid_revenue'] ?? 0);
         $stats['total_revenue'] = (float) ($revenueResult[0]['total_revenue'] ?? 0);
         
-        // Average order value
         if ($stats['total_orders'] > 0) {
             $stats['average_order_value'] = $stats['total_revenue'] / $stats['total_orders'];
         } else {

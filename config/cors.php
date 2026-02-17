@@ -2,32 +2,30 @@
 /**
  * CORS Configuration
  * Allows React frontend to communicate with PHP backend
+ * WITH SESSION SUPPORT
  * 
  * Place in: C:\xampp\htdocs\wrightcommerce\config\cors.php
- * Include at the top of public/index.php
  */
-
-// Allow requests from React development server
-$allowedOrigins = [
-    'http://localhost:3000',  // React Admin
-    'http://localhost:3001',  // React Storefront (if running on different port)
-    'http://localhost:5173',  // Vite (alternative)
-];
 
 // Get origin from request
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
+// Allowed origins
+$allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+];
+
 // Check if origin is allowed
 if (in_array($origin, $allowedOrigins)) {
     header("Access-Control-Allow-Origin: $origin");
+    header("Access-Control-Allow-Credentials: true");
 } else {
-    // In development, you might want to allow all origins
-    // Comment this out in production!
+    // Development fallback
     header("Access-Control-Allow-Origin: http://localhost:3000");
+    header("Access-Control-Allow-Credentials: true");
 }
-
-// Allow credentials (cookies, sessions)
-header("Access-Control-Allow-Credentials: true");
 
 // Allow methods
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
