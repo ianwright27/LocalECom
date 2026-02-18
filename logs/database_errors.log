@@ -9,3 +9,25 @@
 [2026-02-12 14:16:24] Insert Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'category' in 'field list' | Table: products
 [2026-02-14 10:11:18] Find Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reference' in 'where clause' | Table: payments
 [2026-02-14 21:33:26] Insert Error: SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'business_id' cannot be null | Table: orders
+[2026-02-17 21:23:57] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-17 21:24:02] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-17 21:24:43] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 12:45:54] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 12:46:26] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 12:47:13] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 12:51:00] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 12:51:56] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 12:59:27] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 12:59:38] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 12:59:52] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 13:00:13] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 13:00:19] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 13:00:34] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 13:01:12] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 13:01:29] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 13:01:49] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 13:03:12] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 13:04:05] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 13:04:15] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 14:09:32] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'country' in 'field list' | Table: businesses
+[2026-02-18 16:45:39] Update Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'currency' in 'field list' | Table: businesses

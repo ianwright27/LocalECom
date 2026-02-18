@@ -15,6 +15,7 @@
  * @version 1.0
  */
 
+
 class NotificationService {
     private $db;
     private $smsProvider;
@@ -70,6 +71,8 @@ class NotificationService {
             ];
         }
         
+        // $this->logToFile("Attempting to send notification for event '{$event}' to business ID {$businessId} via channels: " . implode(', ', $channels), 'info');
+        
         $results = [];
         
         // Send through each enabled channel
@@ -77,6 +80,7 @@ class NotificationService {
             $result = $this->sendToChannel($channel, $businessId, $event, $recipient, $data, $settings);
             $results[$channel] = $result;
         }
+        
         
         return [
             'success' => true,
@@ -103,6 +107,8 @@ class NotificationService {
                     return ['success' => false, 'error' => 'Unknown channel'];
             }
         } catch (Exception $e) {
+            $this->logToFile("Error sending notification via {$channel}: " . $e->getMessage(), 'error');
+
             $this->log($businessId, $event, 'failed', $e->getMessage(), $data);
             return ['success' => false, 'error' => $e->getMessage()];
         }
@@ -169,6 +175,8 @@ class NotificationService {
             $subject,
             $body
         );
+        
+        $this->logToFile("Email notification for event '{$event}' to {$recipient['email']} resulted in: " . json_encode($result), $result['success'] ? 'info' : 'error'); 
         
         $this->log($businessId, $event, $result['success'] ? 'sent' : 'failed', json_encode($result), $data);
         
@@ -304,4 +312,26 @@ class NotificationService {
             error_log("Failed to log notification: " . $e->getMessage());
         }
     }
+
+    /**
+     * Log message to file
+     * 
+     * @param string $message Message to log
+     * @param string $level Log level (info, warning, error)
+     */
+    private function logToFile($message, $level = 'info') {
+        $logDir = __DIR__ . '/../../logs';
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0755, true);
+        }
+        
+        $logFile = $logDir . '/' . date('Y-m-d') . '.log';
+        $timestamp = date('Y-m-d H:i:s');
+        $logMessage = "[{$timestamp}] [{$level}] {$message}\n";
+        
+        file_put_contents($logFile, $logMessage, FILE_APPEND);
+    }
+
 }
+
+    

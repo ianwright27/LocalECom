@@ -1,43 +1,36 @@
 # WrightCommerce API - Apache Configuration
-# Clean URLs and single entry point routing
-# CORS is handled in PHP (cors.php), NOT here
+# NO CORS headers here - options.php handles OPTIONS
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-
-    # Base path for the project
     RewriteBase /wrightcommerce/public/
-
-    # Allow direct access to existing files and folders
+    
+    # ✅ Route OPTIONS requests to options.php (which sets CORS headers)
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule .* options.php [L]
+    
+    # Allow direct access to existing files/folders
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
-
-    # Route all other requests to index.php
+    
+    # Route everything else to index.php
     RewriteRule ^ index.php [QSA,L]
-</IfModule>
-
-<IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "http://localhost:3000"
-    Header set Access-Control-Allow-Credentials "true"
-    Header set Vary "Origin"
 </IfModule>
 
 # Disable directory listing
 Options -Indexes
 
-# Protect hidden and sensitive files
+# Protect hidden files
 <FilesMatch "^\.">
     Require all denied
 </FilesMatch>
 
-# Default character encoding
+# Default charset
 AddDefaultCharset UTF-8
 
-# PHP settings (development only)
+# PHP settings
 <IfModule mod_php.c>
     php_flag display_errors On
     php_value error_reporting E_ALL
-    # ⚠️ Disable in production:
-    # php_flag display_errors Off
 </IfModule>

@@ -1,0 +1,60 @@
+[2026-02-18 11:31:10] [info] Product updated: ID 67, By User: 1
+[2026-02-18 12:34:54] [info] Product updated: ID 67, By User: 1
+[2026-02-18 12:44:10] [info] Product updated: ID 67, By User: 1
+[2026-02-18 12:45:54] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 12:46:26] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 12:47:13] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 12:51:00] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 12:51:56] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 12:59:27] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 12:59:38] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 12:59:52] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 13:00:13] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 13:00:19] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 13:00:34] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 13:01:12] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 13:01:29] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 13:01:49] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 13:03:12] [error] Failed to update business profile: 1Database update operation failed
+[2026-02-18 13:04:05] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 13:04:15] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 14:09:32] [error] Failed to update business profile: 1Database update operation failed
+[2026-02-18 14:11:40] [info] Business profile updated: Business ID 1
+[2026-02-18 14:12:06] [info] Business profile updated: Business ID 1
+[2026-02-18 14:12:21] [info] Business profile updated: Business ID 1
+[2026-02-18 14:12:37] [info] Notification preferences updated: Business ID 1
+[2026-02-18 14:32:38] [info] Business profile updated: Business ID 1
+[2026-02-18 14:36:25] [info] Business profile updated: Business ID 1
+[2026-02-18 14:36:54] [info] Business profile updated: Business ID 1
+[2026-02-18 14:37:44] [info] Business profile updated: Business ID 1
+[2026-02-18 14:38:42] [info] Password changed for user: john@example.com
+[2026-02-18 14:38:49] [info] Notification preferences updated: Business ID 1
+[2026-02-18 15:41:52] [info] Order ORD-20260214-96FCCE status: processing → shipped
+[2026-02-18 15:46:24] [info] Order ORD-20260214-96FCCE status: shipped → processing
+[2026-02-18 15:53:03] [info] Order ORD-20260214-96FCCE status: processing → shipped
+[2026-02-18 15:53:03] [info] Attempting to send notification for event 'order_status_updated' to business ID 1 via channels: whatsapp, email
+[2026-02-18 15:54:13] [info] Order ORD-20260214-96FCCE status: shipped → processing
+[2026-02-18 15:54:13] [info] Attempting to send notification for event 'order_status_updated' to business ID 1 via channels: whatsapp, email
+[2026-02-18 15:56:03] [info] Order ORD-20260214-96FCCE status: processing → shipped
+[2026-02-18 15:56:59] [info] Order ORD-20260214-96FCCE status: shipped → processing
+[2026-02-18 15:58:26] [info] Order ORD-20260214-96FCCE status: processing → shipped
+[2026-02-18 16:00:27] [info] Order ORD-20260214-96FCCE status: shipped → processing
+[2026-02-18 16:04:53] [info] Order ORD-20260214-96FCCE status: processing → shipped
+[2026-02-18 16:45:39] [error] Failed to update business profile: Database update operation failed
+[2026-02-18 16:46:02] [info] Business profile updated: Business ID 1
+[2026-02-18 16:49:32] [info] Business profile updated: Business ID 1
+[2026-02-18 16:49:40] [info] Notification preferences updated: Business ID 1
+[2026-02-18 16:52:13] [info] Order ORD-20260214-96FCCE status: shipped → processing
+[2026-02-18 16:52:16] [error] Email notification for event 'order_status_updated' to thewian27@gmail.com resulted in: {"success":false,"error":"Failed to send email. Check PHP mail() configuration.","email":"thewian27@gmail.com"}
+[2026-02-18 17:06:33] [info] Order ORD-20260214-96FCCE status: processing → shipped
+[2026-02-18 17:06:35] [error] Email notification for event 'order_status_updated' to thewian27@gmail.com resulted in: {"success":false,"error":"Failed to send email. Check PHP mail() configuration.","email":"thewian27@gmail.com"}
+[2026-02-18 17:09:16] [info] Order ORD-20260214-96FCCE status: shipped → processing
+[2026-02-18 17:09:18] [error] Email notification for event 'order_processing' to thewian27@gmail.com resulted in: {"success":false,"error":"Failed to send email. Check PHP mail() configuration.","email":"thewian27@gmail.com"}
+[2026-02-18 18:01:58] [info] Business profile updated: Business ID 1
+[2026-02-18 18:02:34] [info] User logged out: john@example.com
+[2026-02-18 18:02:45] [info] User logged in: john@example.com
+[2026-02-18 18:09:31] [info] Order ORD-20260213-25CDD9 status: pending → processing
+[2026-02-18 18:09:35] [error] Email notification for event 'order_processing' to john@test.com resulted in: {"success":false,"error":"Failed to send email. Check PHP mail() configuration.","email":"john@test.com"}
+[2026-02-18 18:09:41] [info] Order ORD-20260213-25CDD9 status: processing → pending
+[2026-02-18 18:09:44] [error] Email notification for event 'order_placed' to john@test.com resulted in: {"success":false,"error":"Failed to send email. Check PHP mail() configuration.","email":"john@test.com"}
+[2026-02-18 18:15:42] [info] Product updated: ID 47, By User: 1
