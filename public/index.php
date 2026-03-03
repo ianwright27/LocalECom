@@ -7,9 +7,31 @@
 // ============================================
 // CORS headers for actual requests (not OPTIONS)
 // ============================================
-header('Access-Control-Allow-Origin: http://localhost:3000');
-header('Access-Control-Allow-Credentials: true');
-header('Content-Type: application/json');
+
+// REMOVE any existing CORS headers first
+header_remove('Access-Control-Allow-Origin');
+header_remove('Access-Control-Allow-Credentials');
+
+// CORS Headers - MUST BE FIRST
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+];
+
+if (in_array($origin, $allowedOrigins)) {
+    header("Access-Control-Allow-Origin: $origin");  // SPECIFIC, NOT *
+    header('Access-Control-Allow-Credentials: true');
+}
+
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+
+// Handle OPTIONS preflight (shouldn't reach here, but just in case)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
 // ============================================
 // Load cors.php for session only
@@ -104,6 +126,7 @@ $router->group('/api/v1', function($router) {
     $router->post('/orders/{id}/delete', 'OrderController@destroy');  // ✅ Also accept POST
     
     // CUSTOMERS
+    /*
     $router->get('/customers/search', 'CustomerController@search');
     $router->get('/customers', 'CustomerController@index');
     $router->get('/customers/{id}', 'CustomerController@show');
@@ -113,7 +136,19 @@ $router->group('/api/v1', function($router) {
     $router->post('/customers/{id}', 'CustomerController@update');  // ✅ Also accept POST
     $router->delete('/customers/{id}', 'CustomerController@destroy');
     $router->post('/customers/{id}/delete', 'CustomerController@destroy');  // ✅ Also accept POST
-    
+    */
+    // Register customer (public)
+    $router->post('/customers/register', 'CustomerController@register');
+    // Login customer (public)
+    $router->post('/customers/login', 'CustomerController@login');
+    // Get customer profile (requires auth)
+    $router->get('/customers/profile', 'CustomerController@profile');
+    // Update customer profile (requires auth)
+    $router->put('/customers/profile', 'CustomerController@updateProfile');
+    $router->post('/customers/profile', 'CustomerController@updateProfile'); // POST fallback
+    // Get customer orders (requires auth)
+    $router->get('/customers/orders', 'CustomerController@orders');
+
     // PAYMENTS
     $router->get('/payments/stats', 'PaymentsController@stats');
     $router->get('/payments/search', 'PaymentsController@search');

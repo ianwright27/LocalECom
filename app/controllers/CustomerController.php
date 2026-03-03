@@ -1,142 +1,296 @@
 <?php
 /**
- * CustomerController
- * WrightCommerce - E-commerce Platform for East African Small Businesses
- * 
- * Handles customer management for business owners
- * 
- * @author WrightCommerce Team
- * @version 1.0
+ * Customer Controller
+ * Handles customer authentication and profile management
  */
 
 require_once __DIR__ . '/BaseController.php';
+require_once '../app/helpers/Response.php';
 
-class CustomerController extends BaseController {
-    
+class CustomerController extends BaseController
+{
+    // private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance();
+    }
+
     /**
-     * GET /api/v1/customers
-     * List all customers for authenticated user's business
+     * Register new customer
+     * POST /api/v1/customers/register
      */
-    public function index() {
-        $this->requireAuth();
-        
-        $businessId = $this->getBusinessId();
-        $pagination = $this->getPagination(20);
-        
-        $search = $this->input('search');
-        
-        if ($search) {
-            $sql = "SELECT * FROM customers 
-                    WHERE business_id = ? 
-                    AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)
-                    ORDER BY created_at DESC
-                    LIMIT ? OFFSET ?";
+    public function register()
+    {
+        try {
+            $data = $this->getJsonInput();
             
-            $searchTerm = "%{$search}%";
-            $customers = $this->db->query($sql, [
-                $businessId,
-                $searchTerm,
-                $searchTerm,
-                $searchTerm,
-                $pagination['limit'],
-                $pagination['offset']
+            // Validate input
+            if (!isset($data['name']) || !isset($data['email']) || !isset($data['password'])) {
+                Response::error('Name, email and password are required', 400);
+                return;
+            }
+
+            $name = trim($data['name']);
+            $email = trim($data['email']);
+            $password = $data['password'];
+            $phone = isset($data['phone']) ? trim($data['phone']) : '';
+
+            // Validate email
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                Response::error('Invalid email address', 400);
+                return;
+            }
+
+            // Check if email already exists
+            if ($this->db->exists('customers', ['email' => $email])) {
+                Response::error('Email already registered', 409);
+                return;
+            }
+
+            // Get business_id (from config or first active product)
+            $businessId = $_ENV['BUSINESS_ID'] ?? 1;
+            if (!$businessId) {
+                $products = $this->db->findAll('products', ['status' => 'active'], 'id ASC', 1);
+                $businessId = $products[0]['business_id'] ?? 1;
+            }
+
+            // Create customer
+            $customerId = $this->db->insert('customers', [
+                'business_id' => $businessId,
+                'name' => $name,
+                'email' => $email,
+                'password' => password_hash($password, PASSWORD_DEFAULT),
+                'phone' => str_replace([' ', '-', '+'], '', $phone),
+                'created_at' => date('Y-m-d H:i:s'),
             ]);
+
+            if (!$customerId) {
+                Response::error('Failed to create customer', 500);
+                return;
+            }
+
+            // Get created customer
+            $customer = $this->db->find('customers', $customerId);
+            unset($customer['password']); // Don't send password back
+
+            // Generate token (simple implementation)
+            $token = $this->generateToken($customerId);
+
+            Response::success([
+                'customer' => $customer,
+                'token' => $token,
+            ], 'Registration successful', 201);
+
+        } catch (\Exception $e) {
+            error_log('Registration error: ' . $e->getMessage());
+            Response::error('Registration failed', 500);
+        }
+    }
+
+    /**
+     * Login customer
+     * POST /api/v1/customers/login
+     */
+    public function login()
+    {
+        try {
+            $data = $this->getJsonInput();
             
-            $countSql = "SELECT COUNT(*) as count FROM customers 
-                         WHERE business_id = ? 
-                         AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)";
-            $totalResult = $this->db->query($countSql, [$businessId, $searchTerm, $searchTerm, $searchTerm]);
-            $total = $totalResult[0]['count'];
-        } else {
-            $total = $this->db->count('customers', ['business_id' => $businessId]);
-            $customers = $this->db->findAll(
-                'customers',
-                ['business_id' => $businessId],
-                'created_at DESC',
-                $pagination['limit'],
-                $pagination['offset']
-            );
+            // Validate input
+            if (!isset($data['email']) || !isset($data['password'])) {
+                Response::error('Email and password are required', 400);
+                return;
+            }
+
+            $email = trim($data['email']);
+            $password = $data['password'];
+
+            // Find customer by email
+            $customer = $this->db->find('customers', ['email' => $email]);
+
+            if (!$customer) {
+                Response::error('Invalid email or password', 401);
+                return;
+            }
+
+            // Verify password
+            if (!password_verify($password, $customer['password'])) {
+                Response::error('Invalid email or password', 401);
+                return;
+            }
+
+            // Remove password from response
+            unset($customer['password']);
+
+            // Generate token
+            $token = $this->generateToken($customer['id']);
+
+            Response::success([
+                'customer' => $customer,
+                'token' => $token,
+            ], 'Login successful');
+
+        } catch (\Exception $e) {
+            error_log('Login error: ' . $e->getMessage());
+            Response::error('Login failed', 500);
         }
-        
-        // Add order count for each customer
-        foreach ($customers as &$customer) {
-            $customer['order_count'] = $this->db->count('orders', ['customer_id' => $customer['id']]);
-        }
-        
-        return $this->paginate($customers, $total, $pagination);
     }
-    
+
     /**
-     * GET /api/v1/customers/{id}
-     * Get single customer with orders
+     * Get customer profile
+     * GET /api/v1/customers/profile
+     * Requires authentication
      */
-    public function show($id) {
-        $this->requireAuth();
-        
-        $customer = $this->db->find('customers', $id);
-        
-        if (!$customer) {
-            return $this->notFound('Customer not found');
+    public function profile()
+    {
+        try {
+            // Get customer ID from token
+            $customerId = $this->getAuthenticatedCustomerId();
+            
+            if (!$customerId) {
+                Response::error('Unauthorized', 401);
+                return;
+            }
+
+            $customer = $this->db->find('customers', $customerId);
+
+            if (!$customer) {
+                Response::error('Customer not found', 404);
+                return;
+            }
+
+            unset($customer['password']);
+
+            Response::success($customer);
+
+        } catch (\Exception $e) {
+            error_log('Profile error: ' . $e->getMessage());
+            Response::error('Failed to get profile', 500);
         }
-        
-        // Verify customer belongs to business
-        if ($customer['business_id'] != $this->getBusinessId()) {
-            return $this->forbidden();
-        }
-        
-        // Get customer orders
-        $customer['orders'] = $this->db->findAll('orders', ['customer_id' => $id], 'created_at DESC');
-        $customer['order_count'] = count($customer['orders']);
-        
-        // Calculate total spent
-        $totalSql = "SELECT SUM(total) as total_spent FROM orders WHERE customer_id = ?";
-        $totalResult = $this->db->query($totalSql, [$id]);
-        $customer['total_spent'] = (float) ($totalResult[0]['total_spent'] ?? 0);
-        
-        return $this->success($customer, 'Customer retrieved successfully');
     }
-    
+
     /**
-     * GET /api/v1/customers/{id}/orders
-     * Get customer's orders
+     * Update customer profile
+     * PUT /api/v1/customers/profile
+     * Requires authentication
      */
-    public function orders($id) {
-        $this->requireAuth();
-        
-        $customer = $this->db->find('customers', $id);
-        
-        if (!$customer || $customer['business_id'] != $this->getBusinessId()) {
-            return $this->notFound('Customer not found');
+    public function updateProfile()
+    {
+        try {
+            $customerId = $this->getAuthenticatedCustomerId();
+            
+            if (!$customerId) {
+                Response::error('Unauthorized', 401);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+            
+            $updates = [];
+            
+            if (isset($data['name'])) {
+                $updates['name'] = trim($data['name']);
+            }
+            
+            if (isset($data['phone'])) {
+                $updates['phone'] = str_replace([' ', '-', '+'], '', $data['phone']);
+            }
+            
+            if (isset($data['address'])) {
+                $updates['address'] = trim($data['address']);
+            }
+
+            if (empty($updates)) {
+                Response::error('No fields to update', 400);
+                return;
+            }
+
+            $updated = $this->db->update('customers', $customerId, $updates);
+
+            if (!$updated) {
+                Response::error('Failed to update profile', 500);
+                return;
+            }
+
+            $customer = $this->db->find('customers', $customerId);
+            unset($customer['password']);
+
+            Response::success($customer, 'Profile updated successfully');
+
+        } catch (\Exception $e) {
+            error_log('Update profile error: ' . $e->getMessage());
+            Response::error('Failed to update profile', 500);
         }
-        
-        $orders = $this->db->findAll('orders', ['customer_id' => $id], 'created_at DESC');
-        
-        return $this->success($orders, 'Customer orders retrieved successfully');
     }
-    
+
     /**
-     * GET /api/v1/customers/search
-     * Search customers
+     * Get customer orders
+     * GET /api/v1/customers/orders
+     * Requires authentication
      */
-    public function search() {
-        $this->requireAuth();
-        
-        $query = $this->input('q');
-        
-        if (!$query) {
-            return $this->error('Search query required', 400);
+    public function orders()
+    {
+        try {
+            $customerId = $this->getAuthenticatedCustomerId();
+            
+            if (!$customerId) {
+                Response::error('Unauthorized', 401);
+                return;
+            }
+
+            $orders = $this->db->findAll('orders', ['customer_id' => $customerId], 'created_at DESC');
+
+            Response::success([
+                'items' => $orders,
+                'total' => count($orders),
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Get orders error: ' . $e->getMessage());
+            Response::error('Failed to get orders', 500);
         }
+    }
+
+    /**
+     * Generate simple token for customer
+     * In production, use JWT or similar
+     */
+    private function generateToken($customerId)
+    {
+        // Simple token: base64(customer_id:timestamp:random)
+        $data = $customerId . ':' . time() . ':' . bin2hex(random_bytes(16));
+        return base64_encode($data);
+    }
+
+    /**
+     * Get authenticated customer ID from token
+     * Returns customer ID or null
+     */
+    private function getAuthenticatedCustomerId()
+    {
+        // Check Authorization header
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+
+        if (!$authHeader || !preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+            return null;
+        }
+
+        $token = $matches[1];
         
-        $businessId = $this->getBusinessId();
-        
-        $sql = "SELECT * FROM customers 
-                WHERE business_id = ? 
-                AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)
-                LIMIT 20";
-        
-        $searchTerm = "%{$query}%";
-        $customers = $this->db->query($sql, [$businessId, $searchTerm, $searchTerm, $searchTerm]);
-        
-        return $this->success($customers, "Found " . count($customers) . " customers");
+        try {
+            // Decode token
+            $decoded = base64_decode($token);
+            $parts = explode(':', $decoded);
+            
+            if (count($parts) >= 3) {
+                return (int)$parts[0];
+            }
+        } catch (\Exception $e) {
+            error_log('Token decode error: ' . $e->getMessage());
+        }
+
+        return null;
     }
 }

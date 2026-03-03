@@ -58,3 +58,8 @@
 [2026-02-18 18:09:41] [info] Order ORD-20260213-25CDD9 status: processing → pending
 [2026-02-18 18:09:44] [error] Email notification for event 'order_placed' to john@test.com resulted in: {"success":false,"error":"Failed to send email. Check PHP mail() configuration.","email":"john@test.com"}
 [2026-02-18 18:15:42] [info] Product updated: ID 47, By User: 1
+[2026-02-18 21:51:56] [info] Business profile updated: Business ID 1
+[2026-02-18 21:52:00] [info] User logged out: john@example.com
+[2026-02-18 21:53:05] [info] New user registered: kevinomosh10000@gmail.com, Business: Sky Shoppers
+[2026-02-18 21:55:20] [info] User logged out: kevinomosh10000@gmail.com
+[2026-02-18 21:55:39] [info] User logged in: john@example.com

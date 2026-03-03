@@ -107,6 +107,17 @@ class BaseController {
     // ============================================
     // JSON RESPONSE METHODS
     // ============================================
+
+     /**
+     * Get JSON input from request body
+     * Returns associative array or empty array if invalid
+     */
+    protected function getJsonInput()
+    {
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+        return is_array($data) ? $data : [];
+    }
     
     /**
      * Send a successful JSON response
