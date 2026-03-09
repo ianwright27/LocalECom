@@ -4,6 +4,7 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /wrightcommerce/public/
+    # RewriteBase /public/
     
     # ✅ Route OPTIONS requests to options.php (which sets CORS headers)
     RewriteCond %{REQUEST_METHOD} OPTIONS

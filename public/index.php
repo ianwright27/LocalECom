@@ -4,6 +4,24 @@
  * options.php handles OPTIONS, this handles all other requests
  */
 
+// TEMPORARY DEBUG - force CORS headers before anything else
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    // comment/update lines below when production changes in the near future
+    'https://wrightcommerce.vercel.app', 
+    'https://wrightcommerce-store.vercel.app', 
+];
+if (in_array($origin, $allowedOrigins)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Access-Control-Allow-Credentials: true');
+}
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+
+
+
 // ============================================
 // CORS headers for actual requests (not OPTIONS)
 // ============================================
@@ -17,6 +35,9 @@ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
+    // comment/update lines below when production changes in the near future
+    'https://wrightcommerce.vercel.app', 
+    'https://wrightcommerce-store.vercel.app', 
 ];
 
 if (in_array($origin, $allowedOrigins)) {
@@ -64,6 +85,7 @@ require_once '../app/controllers/ProductController.php';
 require_once '../app/controllers/AuthController.php';
 require_once '../app/controllers/OrderController.php';
 require_once '../app/controllers/CustomerController.php';
+require_once '../app/controllers/CustomerControllerAdmin.php';
 require_once '../app/controllers/PaymentsController.php';
 require_once '../app/controllers/PaystackController.php';
 require_once '../app/controllers/BusinessController.php';
@@ -126,28 +148,24 @@ $router->group('/api/v1', function($router) {
     $router->post('/orders/{id}/delete', 'OrderController@destroy');  // ✅ Also accept POST
     
     // CUSTOMERS
-    /*
-    $router->get('/customers/search', 'CustomerController@search');
-    $router->get('/customers', 'CustomerController@index');
-    $router->get('/customers/{id}', 'CustomerController@show');
-    $router->get('/customers/{id}/orders', 'CustomerController@orders');
-    $router->post('/customers', 'CustomerController@store');
-    $router->put('/customers/{id}', 'CustomerController@update');
-    $router->post('/customers/{id}', 'CustomerController@update');  // ✅ Also accept POST
-    $router->delete('/customers/{id}', 'CustomerController@destroy');
-    $router->post('/customers/{id}/delete', 'CustomerController@destroy');  // ✅ Also accept POST
-    */
-    // Register customer (public)
+
+    // ADMIN CUSTOMERS (business owner managing their customers)
+    $router->get('/customers/search', 'CustomerControllerAdmin@search');
+    $router->get('/customers', 'CustomerControllerAdmin@index');
+    $router->get('/customers/{id}/orders', 'CustomerControllerAdmin@orders');
+    $router->get('/customers/{id}', 'CustomerControllerAdmin@show');
+
+    // STOREFRONT CUSTOMERS (existing - do not touch)
     $router->post('/customers/register', 'CustomerController@register');
-    // Login customer (public)
     $router->post('/customers/login', 'CustomerController@login');
-    // Get customer profile (requires auth)
     $router->get('/customers/profile', 'CustomerController@profile');
-    // Update customer profile (requires auth)
     $router->put('/customers/profile', 'CustomerController@updateProfile');
-    $router->post('/customers/profile', 'CustomerController@updateProfile'); // POST fallback
-    // Get customer orders (requires auth)
+    $router->post('/customers/profile', 'CustomerController@updateProfile');
+    $router->put('/customers/password', 'CustomerController@changePassword');
+    $router->post('/customers/password', 'CustomerController@changePassword');
     $router->get('/customers/orders', 'CustomerController@orders');
+    $router->get('/customers/orders/{id}', 'CustomerController@getOrder');
+    $router->post('/customers/logout', 'CustomerController@logout');
 
     // PAYMENTS
     $router->get('/payments/stats', 'PaymentsController@stats');

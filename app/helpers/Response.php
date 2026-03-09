@@ -77,6 +77,8 @@ class Response
                 'http://localhost:3000',  // Storefront
                 'http://localhost:3001',  // Admin
                 'http://localhost:3002',  // Additional port if needed
+                'https://wrightcommerce.vercel.app',  // Storefront production
+                'https://wrightcommerce-store.vercel.app',  // Admin production
             ];
             
             // Check if origin is allowed

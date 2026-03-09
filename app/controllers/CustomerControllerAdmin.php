@@ -11,7 +11,7 @@
 
 require_once __DIR__ . '/BaseController.php';
 
-class CustomerController extends BaseController {
+class CustomerControllerAdmin extends BaseController {
     
     /**
      * GET /api/v1/customers

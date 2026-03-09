@@ -14,8 +14,8 @@
  */
 
 // PAYSTACK TEST KEYS (Replace with your own from Paystack Dashboard)
-define('PAYSTACK_PUBLIC_KEY', 'pk_test_0b3....90322'); // Public Key
-define('PAYSTACK_SECRET_KEY', 'sk_test_243....7b700'); // Secret Key
+define('PAYSTACK_PUBLIC_KEY', getenv('PAYSTACK_PUBLIC_KEY')); // Public Key
+define('PAYSTACK_SECRET_KEY', getenv('PAYSTACK_SECRET_KEY')); // Secret Key
 
 // PAYSTACK LIVE KEYS (Use in production only)
 // define('PAYSTACK_PUBLIC_KEY', 'pk_live_xxxxxxxxxxxxxxxxxxxx');

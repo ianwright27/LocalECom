@@ -1,0 +1,6 @@
+[2026-03-08 16:51:46] [info] Order created: ORD-20260308-2389BE, Total: KES 185123
+[2026-03-08 16:51:52] [error] Email notification for event 'order_placed' to john@test.com resulted in: {"success":false,"error":"Failed to send email. Check PHP mail() configuration.","email":"john@test.com"}
+[2026-03-08 16:51:53] [info] Payment initialized for Order ORD-20260308-2389BE: Reference WC-ORD-20260308-2389BE-1772985112
+[2026-03-08 16:52:13] [info] Payment verified for Order ORD-20260308-2389BE: Reference WC-ORD-20260308-2389BE-1772985112
+[2026-03-08 16:53:00] [info] Order ORD-20260306-0D23C9 status: pending → processing
+[2026-03-08 16:53:04] [error] Email notification for event 'order_processing' to john@test.com resulted in: {"success":false,"error":"Failed to send email. Check PHP mail() configuration.","email":"john@test.com"}

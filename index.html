@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WrightCommerce API</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #2563eb;
+      --accent:  #f97316;
+      --dark:    #0f172a;
+      --muted:   #64748b;
+      --light:   #f8fafc;
+      --border:  #e2e8f0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 800; font-size: 1.1rem;
+    }
+    .nav-logo-text { font-weight: 700; font-size: 1.1rem; color: var(--dark); }
+    .nav-logo-text span { color: var(--accent); }
+    .nav-badge {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+      padding: 3px 10px; border-radius: 100px;
+      background: rgba(37,99,235,0.1); color: var(--primary);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #1e40af 100%);
+      color: #fff;
+      padding: 6rem 2rem 5rem;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 70% 50%, rgba(249,115,22,0.15) 0%, transparent 60%);
+    }
+    .hero-content { position: relative; max-width: 720px; margin: 0 auto; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 100px;
+      border: 1px solid rgba(249,115,22,0.4);
+      background: rgba(249,115,22,0.1);
+      color: #fb923c; font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .hero-tag::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: #fb923c;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.6); }
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800; line-height: 1.15;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 span { color: #fb923c; }
+    .hero p {
+      font-size: 1.1rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: 8px;
+      font-weight: 600; font-size: 0.9rem;
+      text-decoration: none; transition: opacity 0.2s, transform 0.2s;
+      cursor: pointer; border: none;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,0.3); }
+
+    /* ── API Status ── */
+    .status-bar {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
+      display: flex; align-items: center; justify-content: center; gap: 2rem;
+      flex-wrap: wrap; font-size: 0.82rem;
+    }
+    .status-item { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-green { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .dot-blue  { background: var(--primary); }
+
+    /* ── Sections ── */
+    section { padding: 5rem 2rem; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-tag {
+      display: inline-block;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 800; margin-bottom: 1rem;
+    }
+    .section-sub { color: var(--muted); max-width: 540px; font-size: 0.95rem; }
+
+    /* ── What is it ── */
+    .what { background: #fff; }
+    .what-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: center; margin-top: 3rem;
+    }
+    @media (max-width: 768px) { .what-grid { grid-template-columns: 1fr; gap: 2rem; } }
+    .what-points { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1.5rem; }
+    .what-point { display: flex; gap: 12px; }
+    .what-point-icon {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      background: rgba(37,99,235,0.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .what-point-text h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
+    .what-point-text p  { font-size: 0.85rem; color: var(--muted); }
+    .api-notice {
+      background: linear-gradient(135deg, #eff6ff, #fff7ed);
+      border: 1px solid #bfdbfe; border-radius: 12px;
+      padding: 1.5rem; font-size: 0.88rem;
+    }
+    .api-notice strong { color: var(--primary); }
+    .api-notice p { color: #475569; margin-top: 0.5rem; line-height: 1.7; }
+    .api-url {
+      display: inline-block; margin-top: 0.75rem;
+      background: #0f172a; color: #7dd3fc;
+      padding: 8px 14px; border-radius: 6px;
+      font-family: monospace; font-size: 0.85rem;
+    }
+
+    /* ── Features ── */
+    .features { background: var(--light); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .feature-card {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover {
+      box-shadow: 0 8px 24px rgba(37,99,235,0.1);
+      border-color: #93c5fd;
+    }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; margin-bottom: 1rem;
+    }
+    .feature-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .feature-card p  { font-size: 0.83rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── Endpoints ── */
+    .endpoints { background: #fff; }
+    .endpoints-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem; margin-top: 3rem;
+    }
+    .endpoint-group { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .endpoint-group-header {
+      background: #f8fafc; padding: 0.75rem 1rem;
+      font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .endpoint-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0.6rem 1rem; border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .endpoint-item:last-child { border-bottom: none; }
+    .method {
+      font-size: 0.68rem; font-weight: 700; padding: 2px 7px;
+      border-radius: 4px; font-family: monospace; flex-shrink: 0;
+    }
+    .get    { background: #dcfce7; color: #15803d; }
+    .post   { background: #dbeafe; color: #1d4ed8; }
+    .put    { background: #fef9c3; color: #854d0e; }
+    .delete { background: #fee2e2; color: #b91c1c; }
+    .endpoint-path { font-family: monospace; color: #334155; font-size: 0.8rem; }
+
+    /* ── Built for ── */
+    .built-for {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #fff; text-align: center;
+    }
+    .built-for .section-title { color: #fff; }
+    .built-for .section-sub   { color: #94a3b8; margin: 0 auto; }
+    .markets {
+      display: flex; justify-content: center; flex-wrap: wrap;
+      gap: 1rem; margin-top: 2.5rem;
+    }
+    .market-tag {
+      padding: 8px 20px; border-radius: 100px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      font-size: 0.85rem; color: #e2e8f0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      background: #0f172a; color: #64748b;
+      padding: 2rem; text-align: center; font-size: 0.82rem;
+    }
+    footer span { color: var(--accent); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">W</div>
+      <div class="nav-logo-text">Wright<span>Commerce</span></div>
+    </a>
+    <span class="nav-badge">API v1.0</span>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-tag">REST API Service</div>
+      <h1>The E-commerce Engine <br/>Built for <span>East Africa</span></h1>
+      <p>WrightCommerce is a headless e-commerce backend powering online stores with M-PESA, card payments, WhatsApp notifications, and full order management — out of the box.</p>
+      <div class="hero-actions">
+        <a href="#endpoints" class="btn btn-primary">View API Endpoints</a>
+        <a href="#features" class="btn btn-outline">What's Included</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <div class="dot dot-green"></div>
+      API Online
+    </div>
+    <div class="status-item">
+      <div class="dot dot-blue"></div>
+      Version 1.0
+    </div>
+    <div class="status-item">
+      <div class="dot dot-blue"></div>
+      PHP 8.x · MySQL
+    </div>
+    <div class="status-item">
+      <div class="dot dot-blue"></div>
+      RESTful · JSON
+    </div>
+  </div>
+
+  <!-- What is WrightCommerce -->
+  <section class="what">
+    <div class="container">
+      <div class="what-grid">
+        <div>
+          <div class="section-tag">What is this?</div>
+          <h2 class="section-title">A Headless E-commerce Backend</h2>
+          <p class="section-sub">WrightCommerce is not a website — it's the engine behind one. It exposes a RESTful API that powers storefronts, admin dashboards, and mobile apps.</p>
+          <div class="what-points">
+            <div class="what-point">
+              <div class="what-point-icon">🏪</div>
+              <div class="what-point-text">
+                <h4>Built for Small Businesses</h4>
+                <p>Designed specifically for East African SMEs — local payments, local currencies, local needs.</p>
+              </div>
+            </div>
+            <div class="what-point">
+              <div class="what-point-icon">🔌</div>
+              <div class="what-point-text">
+                <h4>Headless Architecture</h4>
+                <p>Any frontend can connect — React, Vue, mobile apps, or even WhatsApp bots.</p>
+              </div>
+            </div>
+            <div class="what-point">
+              <div class="what-point-icon">🔒</div>
+              <div class="what-point-text">
+                <h4>Secure & Token-Based</h4>
+                <p>Bearer token authentication for all protected routes. Business and customer auth separated.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="api-notice">
+            <strong>⚠️ This is an API-only service</strong>
+            <p>This URL serves as the backend API for WrightCommerce-powered stores. There is no user interface here. If you are a customer looking to shop, please visit the storefront you were directed to.</p>
+            <div class="api-url">Base URL: /public/api/v1/</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-tag">Features</div>
+      <h2 class="section-title">Everything a Store Needs</h2>
+      <p class="section-sub">WrightCommerce Core ships with all the essentials built in — no plugins required.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3>Product & Inventory Management</h3>
+          <p>Full CRUD for products, categories, stock tracking, and image uploads.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🛒</div>
+          <h3>Order Management</h3>
+          <p>Order creation, status tracking, order items, and customer assignment.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💳</div>
+          <h3>Paystack Payments</h3>
+          <p>Card and M-PESA payments via Paystack with webhook verification.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👤</div>
+          <h3>Customer Accounts</h3>
+          <p>Customer registration, login, profile management, and order history.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔔</div>
+          <h3>Notifications</h3>
+          <p>Email, SMS, and WhatsApp order notifications for customers and businesses.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🏢</div>
+          <h3>Multi-Business Ready</h3>
+          <p>Architecture supports multiple businesses on a single installation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Endpoints -->
+  <section class="endpoints" id="endpoints">
+    <div class="container">
+      <div class="section-tag">API Reference</div>
+      <h2 class="section-title">Available Endpoints</h2>
+      <p class="section-sub">All endpoints are prefixed with <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:0.85rem;">/api/v1</code> and return JSON.</p>
+      <div class="endpoints-grid">
+
+        <div class="endpoint-group">
+          <div class="endpoint-group-header">🔐 Auth</div>
+          <div class="endpoint-item"><span class="method post">POST</span><span class="endpoint-path">/auth/login</span></div>
+          <div class="endpoint-item"><span class="method post">POST</span><span class="endpoint-path">/auth/register</span></div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/auth/me</span></div>
+          <div class="endpoint-item"><span class="method post">POST</span><span class="endpoint-path">/auth/logout</span></div>
+        </div>
+
+        <div class="endpoint-group">
+          <div class="endpoint-group-header">📦 Products</div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/products</span></div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/products/{id}</span></div>
+          <div class="endpoint-item"><span class="method post">POST</span><span class="endpoint-path">/products</span></div>
+          <div class="endpoint-item"><span class="method put">PUT</span><span class="endpoint-path">/products/{id}</span></div>
+          <div class="endpoint-item"><span class="method delete">DEL</span><span class="endpoint-path">/products/{id}</span></div>
+        </div>
+
+        <div class="endpoint-group">
+          <div class="endpoint-group-header">🛒 Orders</div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/orders</span></div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/orders/{id}</span></div>
+          <div class="endpoint-item"><span class="method post">POST</span><span class="endpoint-path">/orders</span></div>
+          <div class="endpoint-item"><span class="method put">PUT</span><span class="endpoint-path">/orders/{id}/status</span></div>
+        </div>
+
+        <div class="endpoint-group">
+          <div class="endpoint-group-header">👤 Customers</div>
+          <div class="endpoint-item"><span class="method post">POST</span><span class="endpoint-path">/customers/register</span></div>
+          <div class="endpoint-item"><span class="method post">POST</span><span class="endpoint-path">/customers/login</span></div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/customers/profile</span></div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/customers/orders</span></div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/customers/orders/{id}</span></div>
+        </div>
+
+        <div class="endpoint-group">
+          <div class="endpoint-group-header">💳 Payments</div>
+          <div class="endpoint-item"><span class="method post">POST</span><span class="endpoint-path">/payments/paystack/initialize</span></div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/payments/paystack/verify/{ref}</span></div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/payments/paystack/public-key</span></div>
+        </div>
+
+        <div class="endpoint-group">
+          <div class="endpoint-group-header">🏢 Business</div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/business/profile</span></div>
+          <div class="endpoint-item"><span class="method put">PUT</span><span class="endpoint-path">/business/profile</span></div>
+          <div class="endpoint-item"><span class="method get">GET</span><span class="endpoint-path">/business/settings</span></div>
+          <div class="endpoint-item"><span class="method put">PUT</span><span class="endpoint-path">/business/settings</span></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Built For -->
+  <section class="built-for">
+    <div class="container">
+      <div class="section-tag" style="color:#fb923c;">Built For</div>
+      <h2 class="section-title">East African Small Businesses</h2>
+      <p class="section-sub">From Nairobi boutiques to Kampala wholesalers — WrightCommerce speaks the language of local commerce.</p>
+      <div class="markets">
+        <span class="market-tag">🇰🇪 Kenya</span>
+        <span class="market-tag">🇺🇬 Uganda</span>
+        <span class="market-tag">🇹🇿 Tanzania</span>
+        <span class="market-tag">💸 M-PESA</span>
+        <span class="market-tag">💳 Paystack</span>
+        <span class="market-tag">📱 WhatsApp</span>
+        <span class="market-tag">💬 SMS</span>
+        <span class="market-tag">🛍️ Retail</span>
+        <span class="market-tag">🏭 Wholesale</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>WrightCommerce API &nbsp;·&nbsp; Version 1.0 &nbsp;·&nbsp; Built with ❤️ for <span>East Africa</span></p>
+    <p style="margin-top:6px;">This is an API service. Unauthorized access is prohibited.</p>
+  </footer>
+
+</body>
+</html>

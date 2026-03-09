@@ -1,6 +1,6 @@
 <?php
 /**
- * Customer Controller
+ * Customer Controller - UPDATED
  * Handles customer authentication and profile management
  */
 
@@ -9,12 +9,11 @@ require_once '../app/helpers/Response.php';
 
 class CustomerController extends BaseController
 {
-    // private $db;
-
     public function __construct()
     {
         $this->db = Database::getInstance();
     }
+
 
     /**
      * Register new customer
@@ -48,12 +47,8 @@ class CustomerController extends BaseController
                 return;
             }
 
-            // Get business_id (from config or first active product)
+            // Get business_id
             $businessId = $_ENV['BUSINESS_ID'] ?? 1;
-            if (!$businessId) {
-                $products = $this->db->findAll('products', ['status' => 'active'], 'id ASC', 1);
-                $businessId = $products[0]['business_id'] ?? 1;
-            }
 
             // Create customer
             $customerId = $this->db->insert('customers', [
@@ -72,9 +67,9 @@ class CustomerController extends BaseController
 
             // Get created customer
             $customer = $this->db->find('customers', $customerId);
-            unset($customer['password']); // Don't send password back
+            unset($customer['password']);
 
-            // Generate token (simple implementation)
+            // Generate token
             $token = $this->generateToken($customerId);
 
             Response::success([
@@ -140,23 +135,21 @@ class CustomerController extends BaseController
     /**
      * Get customer profile
      * GET /api/v1/customers/profile
-     * Requires authentication
      */
     public function profile()
     {
         try {
-            // Get customer ID from token
             $customerId = $this->getAuthenticatedCustomerId();
             
             if (!$customerId) {
-                Response::error('Unauthorized', 401);
+                Response::unauthorized('Please login to access your profile');
                 return;
             }
 
             $customer = $this->db->find('customers', $customerId);
 
             if (!$customer) {
-                Response::error('Customer not found', 404);
+                Response::notFound('Customer not found');
                 return;
             }
 
@@ -173,7 +166,6 @@ class CustomerController extends BaseController
     /**
      * Update customer profile
      * PUT /api/v1/customers/profile
-     * Requires authentication
      */
     public function updateProfile()
     {
@@ -181,7 +173,7 @@ class CustomerController extends BaseController
             $customerId = $this->getAuthenticatedCustomerId();
             
             if (!$customerId) {
-                Response::error('Unauthorized', 401);
+                Response::unauthorized('Please login to update profile');
                 return;
             }
 
@@ -191,6 +183,21 @@ class CustomerController extends BaseController
             
             if (isset($data['name'])) {
                 $updates['name'] = trim($data['name']);
+            }
+            
+            if (isset($data['email'])) {
+                $email = trim($data['email']);
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    Response::error('Invalid email address', 400);
+                    return;
+                }
+                // Check if email is taken by another customer
+                $existing = $this->db->find('customers', ['email' => $email]);
+                if ($existing && $existing['id'] != $customerId) {
+                    Response::error('Email already in use', 409);
+                    return;
+                }
+                $updates['email'] = $email;
             }
             
             if (isset($data['phone'])) {
@@ -225,9 +232,67 @@ class CustomerController extends BaseController
     }
 
     /**
+     * Change customer password
+     * PUT /api/v1/customers/password
+     */
+    public function changePassword()
+    {
+        try {
+            $customerId = $this->getAuthenticatedCustomerId();
+            
+            if (!$customerId) {
+                Response::unauthorized('Please login to change password');
+                return;
+            }
+
+            $data = $this->getJsonInput();
+            
+            if (!isset($data['current_password']) || !isset($data['new_password'])) {
+                Response::error('Current password and new password are required', 400);
+                return;
+            }
+
+            // Validate new password length
+            if (strlen($data['new_password']) < 6) {
+                Response::error('New password must be at least 6 characters', 400);
+                return;
+            }
+
+            // Get customer
+            $customer = $this->db->find('customers', $customerId);
+
+            if (!$customer) {
+                Response::notFound('Customer not found');
+                return;
+            }
+
+            // Verify current password
+            if (!password_verify($data['current_password'], $customer['password'])) {
+                Response::error('Current password is incorrect', 401);
+                return;
+            }
+
+            // Update password
+            $updated = $this->db->update('customers', $customerId, [
+                'password' => password_hash($data['new_password'], PASSWORD_DEFAULT),
+            ]);
+
+            if (!$updated) {
+                Response::error('Failed to update password', 500);
+                return;
+            }
+
+            Response::success(null, 'Password updated successfully');
+
+        } catch (\Exception $e) {
+            error_log('Change password error: ' . $e->getMessage());
+            Response::error('Failed to change password', 500);
+        }
+    }
+
+    /**
      * Get customer orders
      * GET /api/v1/customers/orders
-     * Requires authentication
      */
     public function orders()
     {
@@ -235,37 +300,88 @@ class CustomerController extends BaseController
             $customerId = $this->getAuthenticatedCustomerId();
             
             if (!$customerId) {
-                Response::error('Unauthorized', 401);
+                Response::unauthorized('Please login to view orders');
                 return;
             }
 
             $orders = $this->db->findAll('orders', ['customer_id' => $customerId], 'created_at DESC');
 
-            Response::success([
-                'items' => $orders,
-                'total' => count($orders),
-            ]);
+            Response::success($orders);
 
         } catch (\Exception $e) {
             error_log('Get orders error: ' . $e->getMessage());
             Response::error('Failed to get orders', 500);
         }
     }
+    
+    /**
+     * Get single customer order
+     * GET /api/v1/customers/orders/{id}
+     */
+    public function getOrder($id)  // ← was $orderId, must match {id} in route
+    {
+        try {
+            $customerId = $this->getAuthenticatedCustomerId();
+            
+            if (!$customerId) {
+                Response::unauthorized('Please login to view order');
+                return;
+            }
+
+            $order = $this->db->find('orders', $id);
+
+            if (!$order) {
+                Response::notFound('Order not found');
+                return;
+            }
+
+            // Verify order belongs to customer
+            if ($order['customer_id'] != $customerId) {
+                Response::forbidden('You do not have access to this order');
+                return;
+            }
+
+            // Get order items
+            $items = $this->db->query(
+                "SELECT oi.*, p.name as product_name, p.image 
+                FROM order_items oi 
+                LEFT JOIN products p ON oi.product_id = p.id 
+                WHERE oi.order_id = ?",
+                [$id]
+            );
+
+            $order['items'] = $items;
+
+            Response::success($order);
+
+        } catch (\Exception $e) {
+            error_log('Get order error: ' . $e->getMessage());
+            Response::error('Failed to get order', 500);
+        }
+    }
+
+    /**
+     * Logout customer
+     * POST /api/v1/customers/logout
+     */
+    public function logout()
+    {
+        // For token-based auth, logout is handled on frontend by removing token
+        // This endpoint is just for consistency
+        Response::success(null, 'Logged out successfully');
+    }
 
     /**
      * Generate simple token for customer
-     * In production, use JWT or similar
      */
     private function generateToken($customerId)
     {
-        // Simple token: base64(customer_id:timestamp:random)
         $data = $customerId . ':' . time() . ':' . bin2hex(random_bytes(16));
         return base64_encode($data);
     }
 
     /**
-     * Get authenticated customer ID from token
-     * Returns customer ID or null
+     * Get authenticated customer ID from Bearer token
      */
     private function getAuthenticatedCustomerId()
     {
@@ -280,7 +396,6 @@ class CustomerController extends BaseController
         $token = $matches[1];
         
         try {
-            // Decode token
             $decoded = base64_decode($token);
             $parts = explode(':', $decoded);
             
